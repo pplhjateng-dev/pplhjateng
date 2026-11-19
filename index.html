@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard PPLH – Pengawasan & Pengaduan LH</title>
+<style>
+  :root{
+    --bg:#f3f6f4; --card:#fff; --ink:#1d2b26; --muted:#62736c; --line:#dfe7e3;
+    --brand:#1f7a52; --brand-d:#145a3c; --brand-l:#e3f3eb;
+    --c1:#1f7a52; --c2:#2b6cb0; --c3:#d9822b; --c4:#8a5cc2;
+    --ok:#1f7a52; --warn:#b7791f; --bad:#c0392b;
+    --radius:14px; --shadow:0 1px 2px rgba(20,40,30,.06),0 4px 14px rgba(20,40,30,.05);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.45;font-size:15px}
+  header{background:linear-gradient(135deg,var(--brand-d),var(--brand));color:#fff;padding:14px 18px;position:sticky;top:0;z-index:20;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+  .head-in{max-width:1180px;margin:auto;display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:space-between}
+  .brand h1{margin:0;font-size:18px;letter-spacing:.2px}
+  .brand p{margin:0;font-size:12px;opacity:.85}
+  nav{display:flex;gap:6px}
+  nav button{background:rgba(255,255,255,.14);color:#fff;border:0;padding:8px 16px;border-radius:999px;font-size:14px;cursor:pointer;font-weight:600}
+  nav button.active{background:#fff;color:var(--brand-d)}
+  nav button:focus-visible{outline:3px solid #ffe08a}
+  main{max-width:1180px;margin:18px auto;padding:0 14px 40px}
+  .view{display:none}.view.active{display:block}
+  .note{background:#fff8e1;border:1px solid #f1dc9a;color:#6b5513;border-radius:10px;padding:9px 12px;font-size:13px;margin-bottom:14px}
+  .toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+  .toolbar label{font-size:13px;color:var(--muted)}
+  select,input[type=search],input[type=text]{font:inherit;border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 12px;color:var(--ink)}
+  select:focus,input:focus{outline:2px solid var(--brand);border-color:var(--brand)}
+  .grid{display:grid;gap:14px}
+  .kpis{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+  .kpi{background:var(--card);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow);border-left:5px solid var(--brand)}
+  .kpi .lbl{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+  .kpi .val{font-size:26px;font-weight:700;margin-top:2px}
+  .kpi .sub{font-size:12px;color:var(--muted)}
+  .kpi.c2{border-color:var(--c2)}.kpi.c3{border-color:var(--c3)}.kpi.c4{border-color:var(--c4)}.kpi.bad{border-color:var(--bad)}
+  .cols{grid-template-columns:repeat(auto-fit,minmax(340px,1fr));margin-top:14px}
+  .card{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);min-width:0}
+  .card h2{margin:0 0 10px;font-size:15px}
+  .card h2 small{font-weight:400;color:var(--muted);font-size:12px;margin-left:6px}
+  /* chart tahun */
+  .yearchart{display:flex;align-items:flex-end;gap:10px;height:190px;padding-top:8px}
+  .ycol{flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end;min-width:0}
+  .ystack{width:100%;max-width:46px;display:flex;flex-direction:column-reverse;border-radius:6px 6px 0 0;overflow:hidden}
+  .ystack div{width:100%}
+  .ytot{font-size:12px;font-weight:700;margin-bottom:3px}
+  .ylab{font-size:12px;color:var(--muted);margin-top:4px}
+  .legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;font-size:12px;color:var(--muted)}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+  /* bar horizontal */
+  .hbar{display:grid;grid-template-columns:120px 1fr 34px;gap:8px;align-items:center;font-size:13px;padding:3px 0;border-radius:6px;cursor:pointer}
+  .hbar:hover{background:var(--brand-l)}
+  .hbar .name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{background:#edf2ef;border-radius:99px;height:12px;overflow:hidden}
+  .fill{height:100%;background:var(--brand);border-radius:99px}
+  .hbar .n{text-align:right;font-weight:700}
+  .hint{font-size:12px;color:var(--muted);margin-top:8px}
+  /* tabel */
+  .tablewrap{overflow-x:auto}
+  table{border-collapse:collapse;width:100%;font-size:13px}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);background:#f8faf9;white-space:nowrap}
+  td.num,th.num{text-align:right;white-space:nowrap}
+  /* badges */
+  .badge{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:600;white-space:nowrap}
+  .b-ok{background:#dff3e8;color:#14683f}.b-warn{background:#fdf0d5;color:#8a5a0c}.b-bad{background:#fbe0dc;color:#9b2c20}
+  .b-info{background:#e1ecf8;color:#1f4f87}.b-mute{background:#eceff0;color:#56656d}
+  /* stat sanksi */
+  .sanksi-sum{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+  .sanksi-sum div{background:#f6f9f7;border-radius:10px;padding:10px}
+  .sanksi-sum b{display:block;font-size:18px}
+  .sanksi-sum span{font-size:12px;color:var(--muted)}
+  /* pencarian */
+  .searchbox{position:relative;flex:1;min-width:240px}
+  .searchbox input{width:100%;padding:12px 14px 12px 40px;font-size:16px;border-radius:12px}
+  .searchbox svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--muted)}
+  .layout{display:grid;grid-template-columns:340px 1fr;gap:14px;align-items:start}
+  .results{display:flex;flex-direction:column;gap:8px;max-height:calc(100vh - 230px);overflow:auto;padding-right:2px}
+  .res{background:var(--card);border:2px solid transparent;border-radius:12px;padding:11px 13px;cursor:pointer;box-shadow:var(--shadow);text-align:left;font:inherit;color:inherit;width:100%}
+  .res:hover{border-color:var(--brand-l)}
+  .res.sel{border-color:var(--brand)}
+  .res .t{font-weight:700;font-size:14px}
+  .res .m{font-size:12px;color:var(--muted);margin:2px 0 6px}
+  .res mark{background:#ffe9a8;padding:0 1px;border-radius:2px}
+  .empty{background:var(--card);border:2px dashed var(--line);border-radius:12px;padding:30px 16px;text-align:center;color:var(--muted)}
+  .profile-h{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start}
+  .profile-h h2{font-size:20px;margin:0}
+  .profile-h .sub{color:var(--muted);font-size:13px;margin-top:2px}
+  .info{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:14px 0}
+  .info div{background:#f6f9f7;border-radius:10px;padding:10px 12px;font-size:13px}
+  .info span{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px}
+  .sec{margin-top:18px}
+  .sec h3{font-size:14px;margin:0 0 8px;padding-bottom:6px;border-bottom:2px solid var(--brand-l);color:var(--brand-d)}
+  .timeline{position:relative;margin:0;padding:0 0 0 18px;list-style:none;border-left:3px solid var(--brand-l)}
+  .timeline li{position:relative;margin-bottom:12px;background:#fafcfb;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+  .timeline li::before{content:"";position:absolute;left:-26px;top:14px;width:11px;height:11px;border-radius:50%;background:var(--brand);border:2px solid #fff}
+  .timeline li.pengaduan::before{background:var(--c3)}
+  .timeline li.verifikasi::before{background:var(--c2)}
+  .timeline li.tl::before{background:var(--c4)}
+  .tl-top{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:13px}
+  .tl-top b{font-size:14px}
+  .tl-row{font-size:13px;margin-top:5px}
+  .tl-row span{color:var(--muted);font-size:12px;display:block}
+  .files{display:flex;gap:10px;flex-wrap:wrap}
+  .btn{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:10px;font-weight:700;font-size:14px;text-decoration:none;border:0;cursor:pointer;background:var(--brand);color:#fff}
+  .btn:hover{background:var(--brand-d)}
+  .btn.off{background:#e3e8e6;color:#8a9892;cursor:not-allowed;pointer-events:none}
+  .btn.ghost{background:#fff;color:var(--brand-d);border:1px solid var(--line)}
+  .btn.ghost:hover{background:var(--brand-l)}
+  .back{display:none;margin-bottom:10px}
+  footer{text-align:center;color:var(--muted);font-size:12px;padding:10px}
+  @media (max-width:860px){
+    .layout{grid-template-columns:1fr}
+    .results{max-height:none}
+    .layout.detail-open .results-col{display:none}
+    .layout:not(.detail-open) .detail-col{display:none}
+    .back{display:inline-flex}
+    .hbar{grid-template-columns:96px 1fr 30px}
+  }
+  @media print{
+    header,.toolbar,.results-col,.back,.noprint,footer,.note{display:none!important}
+    body{background:#fff}.layout{display:block}.detail-col{display:block!important}
+    .card{box-shadow:none;border:1px solid #ccc}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="head-in">
+    <div class="brand">
+      <h1>Dashboard PPLH – Pengawasan & Pengaduan LH</h1>
+      <p>Bank data kegiatan pengawas lingkungan hidup · Provinsi Jawa Tengah</p>
+    </div>
+    <nav>
+      <button id="tab-dash" class="active" data-view="dash">📊 Dashboard</button>
+      <button id="tab-cari" data-view="cari">🔎 Cari Usaha</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="note">Data di bawah ini <b>CONTOH (fiktif)</b> untuk uji tampilan. Ganti isi <code>DATA_USAHA</code> di bagian &lt;script&gt; dengan data dari spreadsheet bank data.</div>
+
+  <!-- ============ DASHBOARD ============ -->
+  <section id="dash" class="view active">
+    <div class="toolbar">
+      <label for="f-tahun"><b>Tahun:</b></label>
+      <select id="f-tahun"></select>
+      <label for="f-jenis" style="margin-left:6px"><b>Jenis kegiatan:</b></label>
+      <select id="f-jenis"></select>
+    </div>
+
+    <div class="grid kpis" id="kpis"></div>
+
+    <div class="grid cols">
+      <div class="card">
+        <h2>Kegiatan per Tahun <small>kunjungan, pengaduan, verifikasi, tindak lanjut</small></h2>
+        <div class="yearchart" id="yearchart"></div>
+        <div class="legend" id="legend"></div>
+      </div>
+      <div class="card">
+        <h2>Sebaran per Kab/Kota <small>jumlah kegiatan</small></h2>
+        <div id="kabchart"></div>
+        <div class="hint">Klik salah satu Kab/Kota untuk melihat daftar usahanya.</div>
+      </div>
+    </div>
+
+    <div class="grid cols">
+      <div class="card">
+        <h2>Sanksi Administratif & Denda</h2>
+        <div class="sanksi-sum" id="sanksisum"></div>
+        <div class="tablewrap"><table id="sanksitbl"></table></div>
+      </div>
+      <div class="card">
+        <h2>Ringkasan per Pengawas</h2>
+        <div class="tablewrap"><table id="pengawastbl"></table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PENCARIAN ============ -->
+  <section id="cari" class="view">
+    <div class="toolbar">
+      <div class="searchbox">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <input id="q" type="search" placeholder="Ketik nama usaha/kegiatan, jenis usaha, atau lokasi…" autocomplete="off" aria-label="Cari usaha atau kegiatan">
+      </div>
+      <select id="s-kab" aria-label="Filter Kab/Kota"></select>
+      <select id="s-sa" aria-label="Filter status sanksi">
+        <option value="">Semua status SA</option>
+        <option value="ada">Punya SA</option>
+        <option value="aktif">SA masih berjalan</option>
+        <option value="denda-belum">Denda belum lunas</option>
+        <option value="tanpa">Tanpa SA</option>
+      </select>
+    </div>
+    <div class="layout" id="layout">
+      <div class="results-col">
+        <div id="count" class="hint" style="margin:0 0 8px"></div>
+        <div class="results" id="results"></div>
+      </div>
+      <div class="detail-col" id="detail"></div>
+    </div>
+  </section>
+</main>
+<footer>Dashboard PPLH · versi 0.1 (dashboard & pencarian) · data tersimpan di dalam file ini, tidak dikirim ke mana pun</footer>
+
+<script>
+/* =====================================================================
+   DATA CONTOH (FIKTIF) — GANTI DENGAN DATA ASLI DARI SPREADSHEET
+   Struktur tiap usaha:
+   nama, jenis, alamat, kab, kontak,
+   kunjungan: [{tgl:'YYYY-MM-DD', jenis, pengawas, temuan, tl, status}]
+       jenis  : 'Pengawasan' | 'Pengaduan' | 'Verifikasi' | 'Tindak Lanjut'
+       status : 'Selesai' | 'Proses' | 'Belum'
+   sa: null  atau  {jenis, status:'Aktif'|'Selesai', tgl, sk, denda(angka), dendaStatus:'Lunas'|'Belum dibayar'|'Dicicil'|'-'}
+   arsip: {fisik:'Lemari/Rak/Box', digital:'folder Drive'}
+   berkas: {ba:'url', sa:'url', tl:'url'}   (kosongkan '' bila belum ada)
+   ===================================================================== */
+const DRIVE = 'https://drive.google.com/drive/folders/CONTOH';
+const DATA_USAHA = [
+ {nama:'PT Tirta Sandang Nusantara', jenis:'Industri tekstil (pencelupan & finishing)', alamat:'Jl. Raya Wiradesa KM 4, Wiradesa', kab:'Kab. Pekalongan', kontak:'Bpk. Hartono (Manajer HSE) · 0285-555010',
+  kunjungan:[
+   {tgl:'2022-06-14',jenis:'Pengawasan',pengawas:'Budi Santoso, S.T., M.Si.',temuan:'IPAL tidak beroperasi optimal; warna outlet pekat; belum ada pencatatan debit harian.',tl:'Teguran lisan, diminta perbaikan IPAL 30 hari.',status:'Selesai'},
+   {tgl:'2023-03-09',jenis:'Pengaduan',pengawas:'Dewi Lestari, S.Si.',temuan:'Warga Desa Wiradesa melaporkan air sungai berwarna merah. Terbukti ada pembuangan limbah tanpa olah.',tl:'Rekomendasi sanksi administratif ke Kabid.',status:'Selesai'},
+   {tgl:'2023-09-21',jenis:'Verifikasi',pengawas:'Budi Santoso, S.T., M.Si.',temuan:'Hasil uji lab outlet: COD 412 mg/L, melebihi baku mutu (150 mg/L).',tl:'Penyusunan draf SA Paksaan Pemerintah.',status:'Selesai'},
+   {tgl:'2024-05-16',jenis:'Tindak Lanjut',pengawas:'Dewi Lestari, S.Si.',temuan:'IPAL baru dibangun (biofilter + koagulasi). Sampel outlet memenuhi baku mutu.',tl:'Pemantauan lanjutan 6 bulan.',status:'Proses'}],
+  sa:{jenis:'Paksaan Pemerintah + Denda Administratif',status:'Aktif',tgl:'2023-11-02',sk:'660.1/0452/2023',denda:185000000,dendaStatus:'Dicicil'},
+  arsip:{fisik:'Lemari B2 · Rak 3 · Box PT-014',digital:'Drive > Pengawasan > 2023 > Tirta Sandang'}, berkas:{ba:DRIVE,sa:DRIVE,tl:DRIVE}},
+
+ {nama:'CV Kayu Lestari Jaya', jenis:'Industri kayu lapis (plywood)', alamat:'Desa Bangsri, Kec. Bangsri', kab:'Kab. Jepara', kontak:'Ibu Marlina (Direktur) · 0291-776201',
+  kunjungan:[
+   {tgl:'2022-08-03',jenis:'Pengawasan',pengawas:'Ahmad Fauzi, S.T.',temuan:'Penyimpanan limbah B3 (kaleng lem, oli bekas) tanpa TPS berizin dan tanpa simbol/label.',tl:'Pembinaan, wajib mengurus izin TPS LB3.',status:'Selesai'},
+   {tgl:'2023-10-12',jenis:'Pengawasan',pengawas:'Ahmad Fauzi, S.T.',temuan:'TPS LB3 sudah ada, tetapi logbook belum lengkap; cerobong boiler belum ada lubang sampling.',tl:'Teguran tertulis No. 660/221/2023.',status:'Selesai'},
+   {tgl:'2025-02-18',jenis:'Pengawasan',pengawas:'Rina Wulandari, S.T.',temuan:'Seluruh temuan sebelumnya telah dipenuhi. Laporan RKL-RPL semester disampaikan tepat waktu.',tl:'Tidak ada tindak lanjut.',status:'Selesai'}],
+  sa:{jenis:'Teguran Tertulis',status:'Selesai',tgl:'2023-10-30',sk:'660/221/2023',denda:0,dendaStatus:'-'},
+  arsip:{fisik:'Lemari A1 · Rak 2 · Box PT-007',digital:'Drive > Pengawasan > 2023 > Kayu Lestari'}, berkas:{ba:DRIVE,sa:DRIVE,tl:''}},
+
+ {nama:'PT Agro Pangan Sejahtera', jenis:'Industri tapioka', alamat:'Jl. Raya Juwana–Pati KM 7, Margoyoso', kab:'Kab. Pati', kontak:'Bpk. Slamet R. · 0295-381442',
+  kunjungan:[
+   {tgl:'2024-01-25',jenis:'Pengaduan',pengawas:'Hendra Kusuma, S.H.',temuan:'Bau menyengat dari kolam anaerob; laporan warga RT 03/RW 02. Kolam meluap saat hujan.',tl:'Dilakukan verifikasi dan pengambilan sampel.',status:'Selesai'},
+   {tgl:'2024-02-20',jenis:'Verifikasi',pengawas:'Hendra Kusuma, S.H.',temuan:'Kolam anaerob penuh lumpur, tidak pernah dikuras; pH outlet 4,8 dan BOD melebihi baku mutu.',tl:'Teguran tertulis + wajib pengurasan & perbaikan.',status:'Selesai'},
+   {tgl:'2024-12-04',jenis:'Tindak Lanjut',pengawas:'Dewi Lestari, S.Si.',temuan:'Pengurasan dilakukan, pemanfaatan biogas belum berjalan; bau berkurang.',tl:'Pantau triwulan.',status:'Proses'}],
+  sa:{jenis:'Teguran Tertulis',status:'Aktif',tgl:'2024-03-07',sk:'660.1/0098/2024',denda:0,dendaStatus:'-'},
+  arsip:{fisik:'Lemari B1 · Rak 1 · Box PT-021',digital:'Drive > Pengaduan > 2024 > Agro Pangan'}, berkas:{ba:DRIVE,sa:DRIVE,tl:DRIVE}},
+
+ {nama:'RS Umum Harapan Sehat', jenis:'Rumah sakit (tipe C)', alamat:'Jl. Pemuda No. 118, Semarang Tengah', kab:'Kota Semarang', kontak:'dr. Anindya (Kasubag Umum) · 024-3540077',
+  kunjungan:[
+   {tgl:'2023-04-11',jenis:'Pengawasan',pengawas:'Rina Wulandari, S.T.',temuan:'Incinerator tidak berizin; limbah medis infeksius disimpan >2 hari tanpa pendingin.',tl:'Teguran lisan; kontrak pihak ketiga pengangkut LB3 diwajibkan.',status:'Selesai'},
+   {tgl:'2025-07-08',jenis:'Pengawasan',pengawas:'Rina Wulandari, S.T.',temuan:'Kerja sama dengan pengolah LB3 berizin sudah berjalan; manifest lengkap. IPAL sesuai.',tl:'Tidak ada.',status:'Selesai'}],
+  sa:null, arsip:{fisik:'Lemari C1 · Rak 1 · Box RS-002',digital:'Drive > Pengawasan > 2025 > RS Harapan Sehat'}, berkas:{ba:DRIVE,sa:'',tl:''}},
+
+ {nama:'PT Baja Mandiri Utama', jenis:'Peleburan & pengecoran logam', alamat:'Kawasan Industri Adiwerna Blok C-12', kab:'Kab. Tegal', kontak:'Bpk. Yudi Prakoso (EHS) · 0283-445120',
+  kunjungan:[
+   {tgl:'2022-11-17',jenis:'Pengawasan',pengawas:'Budi Santoso, S.T., M.Si.',temuan:'Emisi cerobong induction furnace tidak diuji; slag B3 ditimbun di area terbuka.',tl:'Teguran tertulis.',status:'Selesai'},
+   {tgl:'2023-06-22',jenis:'Verifikasi',pengawas:'Budi Santoso, S.T., M.Si.',temuan:'Slag masih ditimbun; tidak ada izin penyimpanan LB3. Uji emisi partikulat melebihi baku mutu.',tl:'Penerapan SA paksaan pemerintah dan denda.',status:'Selesai'},
+   {tgl:'2024-08-14',jenis:'Tindak Lanjut',pengawas:'Ahmad Fauzi, S.T.',temuan:'Slag dikirim ke pengolah berizin (bukti manifest 3 trip). Dust collector dipasang.',tl:'Verifikasi pelunasan denda.',status:'Proses'},
+   {tgl:'2026-03-05',jenis:'Pengawasan',pengawas:'Ahmad Fauzi, S.T.',temuan:'Operasional baik. Denda masih tersisa satu termin.',tl:'Surat tagihan termin akhir.',status:'Proses'}],
+  sa:{jenis:'Paksaan Pemerintah + Denda Administratif',status:'Aktif',tgl:'2023-08-10',sk:'660.1/0311/2023',denda:240000000,dendaStatus:'Dicicil'},
+  arsip:{fisik:'Lemari B2 · Rak 1 · Box PT-011',digital:'Drive > Sanksi > 2023 > Baja Mandiri'}, berkas:{ba:DRIVE,sa:DRIVE,tl:DRIVE}},
+
+ {nama:'UD Batik Warna Alam', jenis:'Industri batik (UMKM)', alamat:'Jl. Kenanga No. 21, Kauman', kab:'Kota Pekalongan', kontak:'Ibu Siti Aminah · 0285-421990',
+  kunjungan:[
+   {tgl:'2024-04-23',jenis:'Pengaduan',pengawas:'Dewi Lestari, S.Si.',temuan:'Pembuangan limbah celup langsung ke saluran kampung. Belum punya IPAL.',tl:'Pembinaan dan fasilitasi IPAL komunal.',status:'Selesai'},
+   {tgl:'2025-05-13',jenis:'Tindak Lanjut',pengawas:'Dewi Lestari, S.Si.',temuan:'Tergabung dalam IPAL komunal batik; saluran buang sudah diputus.',tl:'Tidak ada.',status:'Selesai'}],
+  sa:null, arsip:{fisik:'Lemari C2 · Rak 2 · Box UM-004',digital:'Drive > Pengaduan > 2024 > Batik Warna Alam'}, berkas:{ba:DRIVE,sa:'',tl:DRIVE}},
+
+ {nama:'PT Karya Plastik Perkasa', jenis:'Daur ulang plastik', alamat:'Jl. Raya Kaliwungu KM 9, Kaliwungu', kab:'Kab. Kendal', kontak:'Bpk. Deni Setiawan · 0294-381776',
+  kunjungan:[
+   {tgl:'2023-02-15',jenis:'Pengaduan',pengawas:'Hendra Kusuma, S.H.',temuan:'Pembakaran sisa plastik terbuka; asap mengganggu pemukiman. Lahan penimbunan residu tanpa lapisan kedap.',tl:'Teguran tertulis dan penghentian pembakaran.',status:'Selesai'},
+   {tgl:'2023-12-06',jenis:'Verifikasi',pengawas:'Hendra Kusuma, S.H.',temuan:'Pembakaran masih terjadi (bukti foto & saksi warga). Air lindi mencemari parit.',tl:'Rekomendasi denda administratif.',status:'Selesai'},
+   {tgl:'2025-01-29',jenis:'Tindak Lanjut',pengawas:'Ahmad Fauzi, S.T.',temuan:'Pembakaran berhenti, residu diangkut ke TPA. Denda belum dibayar meski sudah dua kali ditagih.',tl:'Surat penagihan ke-3; koordinasi dengan Kejaksaan (bila lanjut).',status:'Proses'}],
+  sa:{jenis:'Denda Administratif',status:'Aktif',tgl:'2024-02-19',sk:'660.1/0054/2024',denda:150000000,dendaStatus:'Belum dibayar'},
+  arsip:{fisik:'Lemari B3 · Rak 2 · Box PT-018',digital:'Drive > Sanksi > 2024 > Karya Plastik'}, berkas:{ba:DRIVE,sa:DRIVE,tl:''}},
+
+ {nama:'Peternakan Ayam Makmur Abadi', jenis:'Peternakan ayam petelur', alamat:'Dusun Tegalrejo, Desa Ngargorejo, Ngemplak', kab:'Kab. Boyolali', kontak:'Bpk. Sugeng · 0271-891203',
+  kunjungan:[
+   {tgl:'2024-07-02',jenis:'Pengaduan',pengawas:'Rina Wulandari, S.T.',temuan:'Bau dan lalat berlebih; kotoran ayam ditumpuk di tepi sungai. Belum ada UKL-UPL/SPPL.',tl:'Wajib memenuhi dokumen lingkungan; pembinaan manajemen kotoran.',status:'Selesai'},
+   {tgl:'2025-03-27',jenis:'Pengawasan',pengawas:'Rina Wulandari, S.T.',temuan:'Kotoran diolah menjadi pupuk organik, SPPL telah terbit.',tl:'Tidak ada.',status:'Selesai'}],
+  sa:null, arsip:{fisik:'Lemari C2 · Rak 3 · Box UM-009',digital:'Drive > Pengaduan > 2024 > Makmur Abadi'}, berkas:{ba:DRIVE,sa:'',tl:DRIVE}},
+
+ {nama:'PT Gula Manis Kencana', jenis:'Pabrik gula', alamat:'Jl. Raya Klaten–Solo KM 12, Ceper', kab:'Kab. Klaten', kontak:'Bpk. Prasetyo (Kabag Lingkungan) · 0272-322118',
+  kunjungan:[
+   {tgl:'2022-09-07',jenis:'Pengawasan',pengawas:'Budi Santoso, S.T., M.Si.',temuan:'Kolam stabilisasi limbah cair penuh; abu boiler dibuang tanpa pencatatan.',tl:'Teguran lisan dan perbaikan.',status:'Selesai'},
+   {tgl:'2023-08-30',jenis:'Pengawasan',pengawas:'Budi Santoso, S.T., M.Si.',temuan:'Pelaporan swapantau 3 bulan terlambat; kualitas outlet masih baik.',tl:'Surat peringatan pelaporan.',status:'Selesai'},
+   {tgl:'2025-09-10',jenis:'Pengawasan',pengawas:'Ahmad Fauzi, S.T.',temuan:'Pelaporan tertib; abu boiler dimanfaatkan sebagai pupuk (izin pemanfaatan ada).',tl:'Tidak ada.',status:'Selesai'}],
+  sa:null, arsip:{fisik:'Lemari A2 · Rak 1 · Box PT-003',digital:'Drive > Pengawasan > 2025 > Gula Manis'}, berkas:{ba:DRIVE,sa:'',tl:''}},
+
+ {nama:'Hotel Grand Bahari', jenis:'Perhotelan', alamat:'Jl. Pantai Marina No. 3, Semarang Barat', kab:'Kota Semarang', kontak:'Bpk. Reza (Chief Engineering) · 024-7612345',
+  kunjungan:[
+   {tgl:'2025-04-16',jenis:'Pengaduan',pengawas:'Dewi Lestari, S.Si.',temuan:'Pembuangan air limbah dapur ke drainase kota tanpa grease trap yang berfungsi.',tl:'Teguran tertulis, wajib perbaikan grease trap.',status:'Selesai'},
+   {tgl:'2025-10-22',jenis:'Tindak Lanjut',pengawas:'Dewi Lestari, S.Si.',temuan:'Grease trap dan STP telah diperbaiki, uji lab outlet memenuhi baku mutu.',tl:'Tidak ada.',status:'Selesai'}],
+  sa:{jenis:'Teguran Tertulis',status:'Selesai',tgl:'2025-05-06',sk:'660.1/0140/2025',denda:0,dendaStatus:'-'},
+  arsip:{fisik:'Lemari C1 · Rak 3 · Box JS-005',digital:'Drive > Pengaduan > 2025 > Grand Bahari'}, berkas:{ba:DRIVE,sa:DRIVE,tl:DRIVE}},
+
+ {nama:'PT Samudra Cold Storage', jenis:'Pengolahan & pembekuan ikan', alamat:'Jl. Pelabuhan Tasikagung No. 8', kab:'Kab. Rembang', kontak:'Ibu Nurul · 0295-692011',
+  kunjungan:[
+   {tgl:'2023-05-18',jenis:'Pengawasan',pengawas:'Hendra Kusuma, S.H.',temuan:'Kebocoran amonia pada sistem refrigerasi (kecil); belum ada SOP tanggap darurat.',tl:'Pembinaan; wajib menyusun SOP dan pelatihan.',status:'Selesai'},
+   {tgl:'2024-06-26',jenis:'Pengaduan',pengawas:'Hendra Kusuma, S.H.',temuan:'Limbah cair pengolahan ikan dialirkan ke muara; bau amis.',tl:'Teguran tertulis dan uji lab.',status:'Proses'},
+   {tgl:'2025-11-12',jenis:'Verifikasi',pengawas:'Rina Wulandari, S.T.',temuan:'IPAL ada tetapi kapasitas kurang; BOD dan minyak-lemak melebihi baku mutu.',tl:'Draf SA sedang disusun.',status:'Proses'}],
+  sa:{jenis:'Teguran Tertulis',status:'Aktif',tgl:'2024-07-15',sk:'660.1/0201/2024',denda:0,dendaStatus:'-'},
+  arsip:{fisik:'Lemari B1 · Rak 3 · Box PT-025',digital:'Drive > Pengaduan > 2024 > Samudra Cold'}, berkas:{ba:DRIVE,sa:DRIVE,tl:''}},
+
+ {nama:'CV Karang Putih', jenis:'Penambangan batu gamping', alamat:'Desa Tegowanu Kulon, Kec. Tegowanu', kab:'Kab. Grobogan', kontak:'Bpk. Mahmud · 0292-441509',
+  kunjungan:[
+   {tgl:'2023-07-13',jenis:'Pengaduan',pengawas:'Ahmad Fauzi, S.T.',temuan:'Debu dan kerusakan jalan desa; lubang bekas tambang belum direklamasi.',tl:'Koordinasi dengan Dinas ESDM dan teguran.',status:'Selesai'},
+   {tgl:'2024-09-18',jenis:'Verifikasi',pengawas:'Ahmad Fauzi, S.T.',temuan:'Reklamasi tidak dilakukan, dana jaminan reklamasi tidak ditempatkan.',tl:'Rekomendasi pembekuan izin lingkungan.',status:'Selesai'},
+   {tgl:'2026-01-21',jenis:'Tindak Lanjut',pengawas:'Rina Wulandari, S.T.',temuan:'Aktivitas tambang berhenti sebagian; reklamasi baru 20%.',tl:'Pemantauan 3 bulan.',status:'Proses'}],
+  sa:{jenis:'Pembekuan Izin Lingkungan',status:'Aktif',tgl:'2024-11-04',sk:'660.1/0377/2024',denda:75000000,dendaStatus:'Belum dibayar'},
+  arsip:{fisik:'Lemari B3 · Rak 1 · Box PT-016',digital:'Drive > Sanksi > 2024 > Karang Putih'}, berkas:{ba:DRIVE,sa:DRIVE,tl:DRIVE}},
+
+ {nama:'PT Kencana Garmen Indonesia', jenis:'Industri garmen & laundry', alamat:'Jl. Raya Bekonang KM 3, Mojolaban', kab:'Kab. Sukoharjo', kontak:'Bpk. Ardi (HRD & GA) · 0271-593881',
+  kunjungan:[
+   {tgl:'2024-10-09',jenis:'Pengawasan',pengawas:'Dewi Lestari, S.Si.',temuan:'IPAL laundry berfungsi baik; laporan semester lengkap. Limbah B3 dikelola pihak ketiga berizin.',tl:'Tidak ada.',status:'Selesai'},
+   {tgl:'2026-04-15',jenis:'Pengawasan',pengawas:'Dewi Lestari, S.Si.',temuan:'Sesuai. Disarankan penerapan efisiensi air (reuse).',tl:'Pembinaan.',status:'Selesai'}],
+  sa:null, arsip:{fisik:'Lemari A3 · Rak 2 · Box PT-030',digital:'Drive > Pengawasan > 2026 > Kencana Garmen'}, berkas:{ba:DRIVE,sa:'',tl:''}},
+
+ {nama:'PT Energi Biomassa Lestari', jenis:'Pembangkit listrik biomassa', alamat:'Kawasan Industri Cilacap Blok F', kab:'Kab. Cilacap', kontak:'Bpk. Wahyu (Plant Manager) · 0282-534400',
+  kunjungan:[
+   {tgl:'2025-06-03',jenis:'Pengawasan',pengawas:'Budi Santoso, S.T., M.Si.',temuan:'CEMS belum terkoneksi ke server SIMPEL; abu terbang disimpan tanpa penutup.',tl:'Teguran tertulis.',status:'Selesai'},
+   {tgl:'2026-02-11',jenis:'Tindak Lanjut',pengawas:'Budi Santoso, S.T., M.Si.',temuan:'CEMS sudah online; abu terbang disimpan di silo tertutup.',tl:'Tidak ada.',status:'Selesai'}],
+  sa:{jenis:'Teguran Tertulis',status:'Selesai',tgl:'2025-06-25',sk:'660.1/0188/2025',denda:0,dendaStatus:'-'},
+  arsip:{fisik:'Lemari A3 · Rak 3 · Box PT-033',digital:'Drive > Pengawasan > 2025 > Energi Biomassa'}, berkas:{ba:DRIVE,sa:DRIVE,tl:DRIVE}},
+
+ {nama:'PT Sinar Kertas Medika', jenis:'Industri kertas & bubur kertas', alamat:'Jl. Industri Raya No. 5, Jati', kab:'Kab. Kudus', kontak:'Ibu Lia (EHS Officer) · 0291-433021',
+  kunjungan:[
+   {tgl:'2022-04-20',jenis:'Pengawasan',pengawas:'Ahmad Fauzi, S.T.',temuan:'Sludge IPAL dibuang ke lahan terbuka tanpa uji karakteristik.',tl:'Teguran tertulis, wajib uji TCLP.',status:'Selesai'},
+   {tgl:'2023-01-31',jenis:'Verifikasi',pengawas:'Ahmad Fauzi, S.T.',temuan:'Hasil TCLP: tidak B3; namun pembuangan sludge tanpa izin pemanfaatan/penimbunan.',tl:'Denda administratif.',status:'Selesai'},
+   {tgl:'2025-08-19',jenis:'Pengawasan',pengawas:'Hendra Kusuma, S.H.',temuan:'Sludge dimanfaatkan sebagai bahan bakar co-processing bersertifikat. Taat.',tl:'Tidak ada.',status:'Selesai'}],
+  sa:{jenis:'Denda Administratif',status:'Selesai',tgl:'2023-03-14',sk:'660.1/0066/2023',denda:95000000,dendaStatus:'Lunas'},
+  arsip:{fisik:'Lemari B2 · Rak 2 · Box PT-009',digital:'Drive > Sanksi > 2023 > Sinar Kertas'}, berkas:{ba:DRIVE,sa:DRIVE,tl:DRIVE}}
+];
+/* ===================== AKHIR DATA ===================== */
+
+const JENIS = ['Pengawasan','Pengaduan','Verifikasi','Tindak Lanjut'];
+const JCOL  = {'Pengawasan':'var(--c1)','Pengaduan':'var(--c3)','Verifikasi':'var(--c2)','Tindak Lanjut':'var(--c4)'};
+const JCLS  = {'Pengawasan':'','Pengaduan':'pengaduan','Verifikasi':'verifikasi','Tindak Lanjut':'tl'};
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const rp = n => 'Rp ' + new Intl.NumberFormat('id-ID').format(n||0);
+const rpShort = n => n>=1e9 ? 'Rp '+(n/1e9).toFixed(2).replace('.',',')+' M' : n>=1e6 ? 'Rp '+Math.round(n/1e6)+' jt' : rp(n);
+const tglFmt = d => d ? new Date(d+'T00:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}) : '-';
+const thn = d => d.slice(0,4);
+const uniq = a => [...new Set(a)];
+
+// beri id
+DATA_USAHA.forEach((u,i)=>{u.id=i; u.kunjungan.sort((a,b)=>b.tgl.localeCompare(a.tgl));});
+
+/* ---------- Tab ---------- */
+document.querySelectorAll('nav button').forEach(b=>b.addEventListener('click',()=>show(b.dataset.view)));
+function show(v){
+  document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id===v));
+  document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active',x.dataset.view===v));
+  window.scrollTo({top:0});
+  if(v==='cari') $('#q').focus({preventScroll:true});
+}
+
+/* ---------- DASHBOARD ---------- */
+const allVisits = DATA_USAHA.flatMap(u=>u.kunjungan.map(k=>({...k,usaha:u})));
+const tahunList = uniq(allVisits.map(k=>thn(k.tgl))).sort();
+$('#f-tahun').innerHTML = '<option value="">Semua tahun</option>'+tahunList.map(t=>`<option>${t}</option>`).join('');
+$('#f-jenis').innerHTML = '<option value="">Semua jenis</option>'+JENIS.map(j=>`<option>${j}</option>`).join('');
+$('#f-tahun').addEventListener('change',renderDash);
+$('#f-jenis').addEventListener('change',renderDash);
+
+function renderDash(){
+  const ft=$('#f-tahun').value, fj=$('#f-jenis').value;
+  const V = allVisits.filter(k=>(!ft||thn(k.tgl)===ft)&&(!fj||k.jenis===fj));
+  const usahaSet = uniq(V.map(k=>k.usaha.id));
+  const SAall = DATA_USAHA.filter(u=>u.sa && (!ft||thn(u.sa.tgl)===ft));
+  const dendaTotal = SAall.reduce((s,u)=>s+u.sa.denda,0);
+  const dendaLunas = SAall.filter(u=>u.sa.dendaStatus==='Lunas').reduce((s,u)=>s+u.sa.denda,0);
+  const dendaSisa = dendaTotal-dendaLunas;
+
+  $('#kpis').innerHTML = `
+    <div class="kpi"><div class="lbl">Total kegiatan</div><div class="val">${V.length}</div><div class="sub">${usahaSet.length} usaha/kegiatan</div></div>
+    <div class="kpi c3"><div class="lbl">Pengaduan</div><div class="val">${V.filter(k=>k.jenis==='Pengaduan').length}</div><div class="sub">${V.filter(k=>k.jenis==='Pengaduan'&&k.status!=='Selesai').length} belum selesai</div></div>
+    <div class="kpi c2"><div class="lbl">Sanksi administratif</div><div class="val">${SAall.length}</div><div class="sub">${SAall.filter(u=>u.sa.status==='Aktif').length} masih berjalan</div></div>
+    <div class="kpi c4"><div class="lbl">Total denda</div><div class="val" style="font-size:22px">${rpShort(dendaTotal)}</div><div class="sub">${rpShort(dendaLunas)} sudah lunas</div></div>
+    <div class="kpi bad"><div class="lbl">Denda belum lunas</div><div class="val" style="font-size:22px">${rpShort(dendaSisa)}</div><div class="sub">${SAall.filter(u=>u.sa.denda>0&&u.sa.dendaStatus!=='Lunas').length} usaha</div></div>`;
+
+  // per tahun (tidak ikut filter tahun, tapi ikut filter jenis)
+  const base = allVisits.filter(k=>!fj||k.jenis===fj);
+  const perY = tahunList.map(t=>{const r={t};JENIS.forEach(j=>r[j]=base.filter(k=>thn(k.tgl)===t&&k.jenis===j).length);r.tot=JENIS.reduce((s,j)=>s+r[j],0);return r;});
+  const maxY = Math.max(1,...perY.map(r=>r.tot));
+  $('#yearchart').innerHTML = perY.map(r=>`
+    <div class="ycol" title="${r.t}: ${r.tot} kegiatan">
+      <div class="ytot">${r.tot}</div>
+      <div class="ystack" style="height:${r.tot/maxY*135}px">${JENIS.map(j=>r[j]?`<div style="height:${r[j]/r.tot*100}%;background:${JCOL[j]}" title="${j}: ${r[j]}"></div>`:'').join('')}</div>
+      <div class="ylab" style="${r.t===ft?'font-weight:700;color:var(--brand-d)':''}">${r.t}</div>
+    </div>`).join('');
+  $('#legend').innerHTML = JENIS.map(j=>`<span><i style="background:${JCOL[j]}"></i>${j}</span>`).join('');
+
+  // per kab/kota
+  const kabMap={}; V.forEach(k=>kabMap[k.usaha.kab]=(kabMap[k.usaha.kab]||0)+1);
+  const kabArr=Object.entries(kabMap).sort((a,b)=>b[1]-a[1]); const maxK=Math.max(1,...kabArr.map(x=>x[1]));
+  $('#kabchart').innerHTML = kabArr.length? kabArr.map(([k,n])=>`
+    <div class="hbar" data-kab="${esc(k)}" role="button" tabindex="0" title="Lihat usaha di ${esc(k)}">
+      <div class="name">${esc(k)}</div><div class="track"><div class="fill" style="width:${n/maxK*100}%"></div></div><div class="n">${n}</div>
+    </div>`).join('') : '<div class="empty">Tidak ada data untuk filter ini.</div>';
+  document.querySelectorAll('.hbar').forEach(el=>{
+    const go=()=>{show('cari');$('#s-kab').value=el.dataset.kab;$('#q').value='';doSearch();};
+    el.addEventListener('click',go); el.addEventListener('keydown',e=>{if(e.key==='Enter')go();});
+  });
+
+  // sanksi
+  $('#sanksisum').innerHTML = `
+    <div><b>${SAall.filter(u=>u.sa.status==='Aktif').length}</b><span>SA masih berjalan</span></div>
+    <div><b>${SAall.filter(u=>u.sa.status==='Selesai').length}</b><span>SA selesai</span></div>`;
+  $('#sanksitbl').innerHTML = `<thead><tr><th>Usaha</th><th>Jenis SA</th><th class="num">Denda</th><th>Status</th></tr></thead><tbody>`+
+    (SAall.sort((a,b)=>b.sa.denda-a.sa.denda).map(u=>`<tr>
+      <td><a href="#" class="lnk" data-id="${u.id}" style="color:var(--brand-d);font-weight:600;text-decoration:none">${esc(u.nama)}</a><div style="font-size:11px;color:var(--muted)">${esc(u.kab)}</div></td>
+      <td>${esc(u.sa.jenis)}</td><td class="num">${u.sa.denda?rp(u.sa.denda):'-'}</td><td>${dendaBadge(u.sa)}</td></tr>`).join('')||'<tr><td colspan="4">Belum ada SA pada filter ini.</td></tr>')+'</tbody>';
+  document.querySelectorAll('.lnk').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();show('cari');$('#q').value='';$('#s-kab').value='';$('#s-sa').value='';doSearch();pilih(+a.dataset.id);}));
+
+  // pengawas
+  const pm={}; V.forEach(k=>{const p=pm[k.pengawas]||(pm[k.pengawas]={n:0,u:new Set(),pd:0,sel:0});p.n++;p.u.add(k.usaha.id);if(k.jenis==='Pengaduan')p.pd++;if(k.status==='Selesai')p.sel++;});
+  $('#pengawastbl').innerHTML = `<thead><tr><th>Pengawas</th><th class="num">Kegiatan</th><th class="num">Usaha</th><th class="num">Pengaduan</th><th class="num">Selesai</th></tr></thead><tbody>`+
+    Object.entries(pm).sort((a,b)=>b[1].n-a[1].n).map(([n,p])=>`<tr><td>${esc(n)}</td><td class="num"><b>${p.n}</b></td><td class="num">${p.u.size}</td><td class="num">${p.pd}</td><td class="num">${Math.round(p.sel/p.n*100)}%</td></tr>`).join('')+'</tbody>';
+}
+function dendaBadge(sa){
+  if(!sa.denda) return sa.status==='Aktif'?'<span class="badge b-warn">SA berjalan</span>':'<span class="badge b-ok">SA selesai</span>';
+  const m={'Lunas':'b-ok','Dicicil':'b-warn','Belum dibayar':'b-bad'}; return `<span class="badge ${m[sa.dendaStatus]||'b-mute'}">${esc(sa.dendaStatus)}</span>`;
+}
+
+/* ---------- PENCARIAN ---------- */
+const kabAll = uniq(DATA_USAHA.map(u=>u.kab)).sort();
+$('#s-kab').innerHTML = '<option value="">Semua Kab/Kota</option>'+kabAll.map(k=>`<option>${esc(k)}</option>`).join('');
+['q','s-kab','s-sa'].forEach(id=>$('#'+id).addEventListener(id==='q'?'input':'change',doSearch));
+$('#q').addEventListener('keydown',e=>{if(e.key==='Enter'){const f=document.querySelector('.res');if(f)f.click();}});
+
+let hasil=[], terpilih=null;
+const norm = s => String(s).toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim();
+function score(u,tokens){
+  const nm=norm(u.nama), hay=norm([u.nama,u.jenis,u.alamat,u.kab,u.sa?u.sa.jenis:'',u.kunjungan.map(k=>k.temuan+' '+k.pengawas).join(' ')].join(' '));
+  let s=0; for(const t of tokens){ if(!hay.includes(t)) return -1; s+= nm.includes(t)?10:1; if(nm.startsWith(t))s+=3; } return s;
+}
+function doSearch(){
+  const tokens=norm($('#q').value).split(' ').filter(Boolean), kab=$('#s-kab').value, f=$('#s-sa').value;
+  hasil = DATA_USAHA.filter(u=>{
+    if(kab&&u.kab!==kab) return false;
+    if(f==='ada'&&!u.sa) return false;
+    if(f==='tanpa'&&u.sa) return false;
+    if(f==='aktif'&&!(u.sa&&u.sa.status==='Aktif')) return false;
+    if(f==='denda-belum'&&!(u.sa&&u.sa.denda>0&&u.sa.dendaStatus!=='Lunas')) return false;
+    return true;
+  }).map(u=>({u,s:tokens.length?score(u,tokens):0})).filter(x=>x.s>=0).sort((a,b)=>b.s-a.s||a.u.nama.localeCompare(b.u.nama)).map(x=>x.u);
+  $('#count').textContent = `${hasil.length} usaha/kegiatan ditemukan`;
+  $('#results').innerHTML = hasil.length? hasil.map(u=>`
+    <button class="res ${terpilih===u.id?'sel':''}" data-id="${u.id}">
+      <div class="t">${hl(u.nama,tokens)}</div>
+      <div class="m">${esc(u.jenis)} · ${esc(u.kab)}</div>
+      <div>${badgeRingkas(u)}</div>
+    </button>`).join('') : '<div class="empty">Tidak ada usaha yang cocok.<br>Coba kata kunci lain atau hapus filter.</div>';
+  document.querySelectorAll('.res').forEach(b=>b.addEventListener('click',()=>pilih(+b.dataset.id)));
+  if(!terpilih) $('#detail').innerHTML='<div class="empty">Pilih salah satu usaha di daftar untuk melihat profil lengkapnya<br>(riwayat kunjungan, temuan, SA & denda, arsip, dan berkas).</div>';
+}
+function hl(text,tokens){
+  let h=esc(text); tokens.forEach(t=>{if(t.length<2)return;h=h.replace(new RegExp('('+t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','ig'),'<mark>$1</mark>');}); return h;
+}
+function badgeRingkas(u){
+  const last=u.kunjungan[0], b=[`<span class="badge b-info">${u.kunjungan.length}× kegiatan</span>`];
+  if(u.sa) b.push(u.sa.denda&&u.sa.dendaStatus!=='Lunas'?`<span class="badge b-bad">Denda ${esc(u.sa.dendaStatus.toLowerCase())}</span>`:u.sa.status==='Aktif'?'<span class="badge b-warn">SA berjalan</span>':'<span class="badge b-ok">SA selesai</span>');
+  else b.push('<span class="badge b-mute">Tanpa SA</span>');
+  b.push(`<span class="badge b-mute">Terakhir ${last?tglFmt(last.tgl):'-'}</span>`); return b.join(' ');
+}
+function pilih(id){
+  terpilih=id; const u=DATA_USAHA[id];
+  document.querySelectorAll('.res').forEach(b=>b.classList.toggle('sel',+b.dataset.id===id));
+  $('#layout').classList.add('detail-open');
+  $('#detail').innerHTML = profil(u);
+  $('#detail .back')?.addEventListener('click',()=>{$('#layout').classList.remove('detail-open');});
+  $('#detail').scrollIntoView({block:'start'});
+}
+function fileBtn(label,url,icon){
+  return url? `<a class="btn" href="${esc(url)}" target="_blank" rel="noopener">${icon} ${label}</a>` : `<span class="btn off" title="Berkas belum tersedia">${icon} ${label} <small>(belum ada)</small></span>`;
+}
+function profil(u){
+  const sa=u.sa, jmlPd=u.kunjungan.filter(k=>k.jenis==='Pengaduan').length;
+  return `<div class="card">
+    <button class="btn ghost back">← Kembali ke daftar</button>
+    <div class="profile-h">
+      <div><h2>${esc(u.nama)}</h2><div class="sub">${esc(u.jenis)}</div></div>
+      <button class="btn ghost noprint" onclick="window.print()">🖨 Cetak profil</button>
+    </div>
+    <div class="info">
+      <div><span>Lokasi</span>${esc(u.alamat)}, ${esc(u.kab)}</div>
+      <div><span>Kontak</span>${esc(u.kontak)}</div>
+      <div><span>Total kegiatan</span>${u.kunjungan.length} (${jmlPd} pengaduan)</div>
+      <div><span>Terakhir diawasi</span>${tglFmt(u.kunjungan[0]?.tgl)}</div>
+    </div>
+
+    <div class="sec"><h3>Sanksi Administratif & Denda</h3>
+      ${sa?`<div class="info" style="margin:0">
+        <div><span>Jenis SA</span>${esc(sa.jenis)}</div>
+        <div><span>Status SA</span><span class="badge ${sa.status==='Aktif'?'b-warn':'b-ok'}" style="display:inline-block">${esc(sa.status)}</span></div>
+        <div><span>No. SK / Tanggal</span>${esc(sa.sk)} · ${tglFmt(sa.tgl)}</div>
+        <div><span>Denda</span>${sa.denda?`<b>${rp(sa.denda)}</b> ${dendaBadge(sa)}`:'Tidak ada denda'}</div>
+      </div>`:'<div class="empty" style="padding:14px">Belum pernah dikenai sanksi administratif.</div>'}
+    </div>
+
+    <div class="sec"><h3>Riwayat Kunjungan, Temuan & Tindak Lanjut</h3>
+      <ul class="timeline">${u.kunjungan.map(k=>`
+        <li class="${JCLS[k.jenis]}">
+          <div class="tl-top"><b>${tglFmt(k.tgl)}</b><span><span class="badge b-info">${esc(k.jenis)}</span> <span class="badge ${k.status==='Selesai'?'b-ok':'b-warn'}">${esc(k.status)}</span></span></div>
+          <div class="tl-row"><span>Pengawas</span>${esc(k.pengawas)}</div>
+          <div class="tl-row"><span>Temuan</span>${esc(k.temuan)}</div>
+          <div class="tl-row"><span>Tindak lanjut</span>${esc(k.tl)}</div>
+        </li>`).join('')}</ul>
+    </div>
+
+    <div class="sec"><h3>Lokasi Arsip</h3>
+      <div class="info" style="margin:0">
+        <div><span>📁 Arsip fisik</span>${esc(u.arsip.fisik)}</div>
+        <div><span>☁️ Arsip digital</span>${esc(u.arsip.digital)}</div>
+      </div>
+    </div>
+
+    <div class="sec"><h3>Berkas</h3>
+      <div class="files">
+        ${fileBtn('Berita Acara (BA)',u.berkas.ba,'📄')}
+        ${fileBtn('Surat SA',u.berkas.sa,'📑')}
+        ${fileBtn('Tindak Lanjut (TL)',u.berkas.tl,'📎')}
+      </div>
+    </div>
+  </div>`;
+}
+
+renderDash(); doSearch();
+</script>
+</body>
+</html>
