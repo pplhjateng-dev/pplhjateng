@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard PPLH – Bank Data Pengawasan & Pengaduan LH</title>
+<style>
+  :root{
+    --bg:#f3f6f4; --card:#fff; --ink:#1d2b26; --muted:#62736c; --line:#dfe7e3;
+    --brand:#1f7a52; --brand-d:#145a3c; --brand-l:#e3f3eb;
+    --c1:#1f7a52; --c2:#d9822b; --c3:#2b6cb0; --bad:#c0392b;
+    --radius:14px; --shadow:0 1px 2px rgba(20,40,30,.06),0 4px 14px rgba(20,40,30,.05);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.45;font-size:15px}
+  header{background:linear-gradient(135deg,var(--brand-d),var(--brand));color:#fff;padding:12px 16px;position:sticky;top:0;z-index:30;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+  .head-in{max-width:1220px;margin:auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:space-between}
+  .brand h1{margin:0;font-size:18px}
+  .brand p{margin:0;font-size:12px;opacity:.85}
+  nav{display:flex;gap:6px;flex-wrap:wrap}
+  nav button{background:rgba(255,255,255,.14);color:#fff;border:0;padding:8px 14px;border-radius:999px;font-size:14px;cursor:pointer;font-weight:600}
+  nav button.active{background:#fff;color:var(--brand-d)}
+  main{max-width:1220px;margin:16px auto;padding:0 14px 40px}
+  .view{display:none}.view.active{display:block}
+  .status{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-bottom:12px}
+  .banner{border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:14px}
+  .banner.err{background:#fdecea;border:1px solid #f3b9b2;color:#8a2218}
+  .loadlog{max-width:560px;margin:14px auto 0;text-align:left;font-size:13px}
+  .loadlog .sh{font-weight:700;margin-top:8px}
+  .loadlog .st{padding:2px 0;color:var(--muted)}.loadlog .st.ok{color:#14683f}.loadlog .st.err{color:#9b2c20}
+  .banner.warn{background:#fff8e1;border:1px solid #f1dc9a;color:#6b5513}
+  .loader{text-align:center;padding:60px 10px;color:var(--muted)}
+  .spin{width:34px;height:34px;border:4px solid var(--brand-l);border-top-color:var(--brand);border-radius:50%;margin:0 auto 12px;animation:sp 1s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  select,input[type=search],input[type=text]{font:inherit;border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 12px;color:var(--ink);max-width:100%}
+  select:focus,input:focus{outline:2px solid var(--brand);border-color:var(--brand)}
+  .grid{display:grid;gap:14px}
+  .kpis{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+  .kpi{background:var(--card);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow);border-left:5px solid var(--brand)}
+  .kpi .lbl{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+  .kpi .val{font-size:26px;font-weight:700;margin-top:2px}
+  .kpi .sub{font-size:12px;color:var(--muted)}
+  .kpi.c2{border-color:var(--c2)}.kpi.c3{border-color:var(--c3)}.kpi.bad{border-color:var(--bad)}
+  .cols{grid-template-columns:repeat(auto-fit,minmax(360px,1fr));margin-top:14px}
+  .card{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);min-width:0}
+  .card h2{margin:0 0 10px;font-size:15px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+  .card h2 small{font-weight:400;color:var(--muted);font-size:12px}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:99px;overflow:hidden}
+  .seg button{border:0;background:#fff;padding:4px 11px;font-size:12px;cursor:pointer;color:var(--muted)}
+  .seg button.on{background:var(--brand);color:#fff}
+  .yearchart{display:flex;align-items:flex-end;gap:8px;height:200px}
+  .ycol{flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end;min-width:0}
+  .ystack{width:100%;max-width:44px;display:flex;flex-direction:column-reverse;border-radius:6px 6px 0 0;overflow:hidden}
+  .ytot{font-size:12px;font-weight:700;margin-bottom:3px}
+  .ylab{font-size:12px;color:var(--muted);margin-top:4px}
+  .legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--muted)}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px}
+  .hbars{max-height:430px;overflow:auto;padding-right:4px}
+  .hbar{display:grid;grid-template-columns:130px 1fr 40px;gap:8px;align-items:center;font-size:13px;padding:3px 4px;border-radius:6px;cursor:pointer}
+  .hbar:hover{background:var(--brand-l)}
+  .hbar .name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{background:#edf2ef;border-radius:99px;height:12px;overflow:hidden}
+  .fill{height:100%;background:var(--brand);border-radius:99px}
+  .hbar .n{text-align:right;font-weight:700}
+  .hint{font-size:12px;color:var(--muted);margin-top:8px}
+  .prop{display:flex;height:16px;border-radius:99px;overflow:hidden;background:#edf2ef;margin:6px 0}
+  .proplegend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-bottom:12px}
+  .proplegend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px}
+  .tablewrap{overflow-x:auto}
+  table{border-collapse:collapse;width:100%;font-size:13px}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);background:#f8faf9;white-space:nowrap}
+  td.num,th.num{text-align:right;white-space:nowrap}
+  tr.click{cursor:pointer}tr.click:hover{background:var(--brand-l)}
+  .badge{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:600;white-space:nowrap}
+  .b-ok{background:#dff3e8;color:#14683f}.b-warn{background:#fdf0d5;color:#8a5a0c}.b-bad{background:#fbe0dc;color:#9b2c20}
+  .b-info{background:#e1ecf8;color:#1f4f87}.b-mute{background:#eceff0;color:#56656d}
+  .toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+  .searchbox{position:relative;flex:1;min-width:240px}
+  .searchbox input{width:100%;padding:12px 14px 12px 40px;font-size:16px;border-radius:12px}
+  .searchbox svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--muted)}
+  .layout{display:grid;grid-template-columns:350px 1fr;gap:14px;align-items:start}
+  .results{display:flex;flex-direction:column;gap:8px;max-height:calc(100vh - 220px);overflow:auto;padding-right:2px}
+  .res{background:var(--card);border:2px solid transparent;border-radius:12px;padding:10px 13px;cursor:pointer;box-shadow:var(--shadow);text-align:left;font:inherit;color:inherit;width:100%}
+  .res:hover{border-color:var(--brand-l)}.res.sel{border-color:var(--brand)}
+  .res .t{font-weight:700;font-size:14px}
+  .res .m{font-size:12px;color:var(--muted);margin:2px 0 6px}
+  mark{background:#ffe9a8;padding:0 1px;border-radius:2px}
+  .empty{background:var(--card);border:2px dashed var(--line);border-radius:12px;padding:30px 16px;text-align:center;color:var(--muted)}
+  .profile-h{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start}
+  .profile-h h2{font-size:20px;margin:0;display:block}
+  .profile-h .sub{color:var(--muted);font-size:13px;margin-top:2px}
+  .info{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin:14px 0}
+  .info div{background:#f6f9f7;border-radius:10px;padding:10px 12px;font-size:13px;min-width:0;overflow-wrap:anywhere}
+  .info span.k{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px}
+  .sec{margin-top:18px}
+  .sec h3{font-size:14px;margin:0 0 8px;padding-bottom:6px;border-bottom:2px solid var(--brand-l);color:var(--brand-d)}
+  .block{background:#fafcfb;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13px;white-space:pre-line;margin-bottom:8px}
+  .block .k{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px}
+  .chips{display:flex;gap:6px;flex-wrap:wrap}
+  .chip{background:var(--brand-l);color:var(--brand-d);border-radius:99px;padding:3px 10px;font-size:12px;font-weight:600}
+  .chip.x{cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+  .chip.x b{font-size:14px;line-height:1}
+  .timeline{margin:0;padding:0 0 0 18px;list-style:none;border-left:3px solid var(--brand-l)}
+  .timeline li{position:relative;margin-bottom:12px;background:#fafcfb;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+  .timeline li::before{content:"";position:absolute;left:-26px;top:14px;width:11px;height:11px;border-radius:50%;background:var(--c1);border:2px solid #fff}
+  .timeline li.pd::before{background:var(--c2)}
+  .tl-top{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:13px}
+  .tl-top b{font-size:14px}
+  .tl-row{font-size:13px;margin-top:5px;white-space:pre-line;overflow-wrap:anywhere}
+  .tl-row span{color:var(--muted);font-size:11px;display:block;text-transform:uppercase;letter-spacing:.4px}
+  .files{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;font-weight:700;font-size:13px;text-decoration:none;border:0;cursor:pointer;background:var(--brand);color:#fff}
+  .btn:hover{background:var(--brand-d)}
+  .btn.sm{padding:5px 10px;font-size:12px}
+  .btn.off{background:#e3e8e6;color:#8a9892;cursor:not-allowed;pointer-events:none}
+  .btn.ghost{background:#fff;color:var(--brand-d);border:1px solid var(--line)}
+  .btn.ghost:hover{background:var(--brand-l)}
+  .back{display:none;margin-bottom:10px}
+  .askrow{display:flex;gap:8px;flex-wrap:wrap}
+  .askrow .searchbox{flex:1}
+  .ex{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+  .ex button{background:#fff;border:1px solid var(--line);border-radius:99px;padding:5px 12px;font-size:12px;cursor:pointer;color:var(--brand-d)}
+  .ex button:hover{background:var(--brand-l)}
+  .filters{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+  .filters select{font-size:13px;padding:7px 10px}
+  .answer{background:var(--brand-l);border-radius:10px;padding:10px 14px;margin:12px 0;font-size:14px}
+  .dpanel{display:none;margin-top:10px;background:#f6f9f7;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+  .dpanel.open{display:block}
+  .dpanel h4{margin:0 0 6px;font-size:13px;color:var(--brand-d)}
+  .dlist{margin:0;padding:0;list-style:none}
+  .dlist li{padding:6px 0;border-bottom:1px solid var(--line);font-size:13px;overflow-wrap:anywhere}
+  .dlist li:last-child{border-bottom:0}
+  .dlist a{color:var(--brand-d);font-weight:600;text-decoration:none}.dlist a:hover{text-decoration:underline}
+  .dm{font-size:11px;color:var(--muted)}
+  .srcs i{font-style:normal;background:#e9eeeb;border-radius:99px;padding:1px 7px;margin-left:6px;font-size:10px}
+  .dnu{margin-top:8px;font-size:12px;color:var(--muted)}.dnu ul{margin:4px 0 0 16px;padding:0}
+  footer{text-align:center;color:var(--muted);font-size:12px;padding:10px}
+  @media (max-width:860px){
+    .layout{grid-template-columns:1fr}.results{max-height:none}
+    .layout.detail-open .results-col{display:none}
+    .layout:not(.detail-open) .detail-col{display:none}
+    .back{display:inline-flex}
+    .cols{grid-template-columns:1fr}
+    .hbar{grid-template-columns:100px 1fr 36px}
+  }
+  @media print{
+    header,.toolbar,.results-col,.back,.noprint,footer,.status{display:none!important}
+    body{background:#fff}.layout{display:block}.detail-col{display:block!important}
+    .card{box-shadow:none;border:1px solid #ccc}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="head-in">
+    <div class="brand">
+      <h1>Dashboard PPLH – Pengawasan & Pengaduan LH</h1>
+      <p>Bank Data 2018–2026 · DLHK Provinsi Jawa Tengah</p>
+    </div>
+    <nav>
+      <button class="active" data-view="dash">📊 Dashboard</button>
+      <button data-view="cari">🔎 Cari & Profil Usaha</button>
+      <button data-view="tanya">💬 Tanya Data</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div id="msg"></div>
+  <div id="loader" class="loader"><div class="spin"></div><div id="loadtitle"><b>Mengambil data dari Google Sheets…</b></div><div id="loadlog" class="loadlog"></div></div><input type="file" id="fileup" accept=".csv,.txt,text/csv,text/plain" multiple style="display:none">
+
+  <!-- ================= 1. DASHBOARD ================= -->
+  <section id="dash" class="view active">
+    <div class="status"><span id="updated"></span><button class="btn ghost sm" id="reload">⟳ Muat ulang data</button><button class="btn ghost sm" id="demo">🧪 Pakai data contoh</button><button class="btn ghost sm" id="upl">📂 Unggah CSV</button></div>
+    <div class="grid kpis" id="kpis"></div>
+    <div class="grid cols">
+      <div class="card">
+        <h2>Pengawasan vs Pengaduan per Tahun <small>jumlah kegiatan</small></h2>
+        <div class="yearchart" id="yearchart"></div>
+        <div class="legend" id="legend"></div>
+      </div>
+      <div class="card">
+        <h2>Sebaran per Kab/Kota
+          <span class="seg" id="kabseg">
+            <button data-m="usaha" class="on">Usaha</button><button data-m="awas">Pengawasan</button><button data-m="adu">Pengaduan</button>
+          </span></h2>
+        <div class="hbars" id="kabchart"></div>
+        <div class="hint">Klik Kab/Kota untuk melihat daftar usahanya.</div>
+      </div>
+    </div>
+    <div class="grid cols">
+      <div class="card">
+        <h2>Denda Administratif <small id="dendasub"></small></h2>
+        <div id="dendabox"></div>
+        <h2 style="margin-top:14px;font-size:14px">Denda belum dibayar</h2>
+        <div class="tablewrap"><table id="dendatbl"></table></div>
+      </div>
+      <div class="card">
+        <h2>Status Sanksi Administratif (SA)</h2>
+        <div id="sabox"></div>
+        <h2 style="margin-top:14px;font-size:14px">Kegiatan terbaru</h2>
+        <div class="tablewrap"><table id="latesttbl"></table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 2. CARI & PROFIL ================= -->
+  <section id="cari" class="view">
+    <div class="toolbar">
+      <div class="searchbox">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <input id="q" type="search" placeholder="Ketik nama PT / usaha / kegiatan…" autocomplete="off" aria-label="Cari usaha">
+      </div>
+      <select id="s-kab" aria-label="Kab/Kota"></select>
+      <select id="s-sa" aria-label="Status">
+        <option value="">Semua status</option>
+        <option value="ada">Punya SA</option>
+        <option value="belum">SA belum dicabut</option>
+        <option value="sudah">SA sudah dicabut</option>
+        <option value="tanpa">Tanpa SA</option>
+        <option value="dendabelum">Denda belum dibayar</option>
+      </select>
+    </div>
+    <div class="layout" id="layout">
+      <div class="results-col"><div id="count" class="hint" style="margin:0 0 8px"></div><div class="results" id="results"></div></div>
+      <div class="detail-col" id="detail"></div>
+    </div>
+  </section>
+
+  <!-- ================= 3. TANYA DATA ================= -->
+  <section id="tanya" class="view">
+    <div class="card">
+      <h2>Tanya Data <small>ketik pertanyaan singkat, sistem mengenali tahun, Kab/Kota, pengawas, sanksi, denda, dan kata kunci</small></h2>
+      <div class="askrow">
+        <div class="searchbox">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          <input id="ask" type="text" placeholder="contoh: pengawasan Eni 2025 Jepara tidak taat" autocomplete="off">
+        </div>
+        <button class="btn" id="askbtn">Tanya</button>
+        <button class="btn ghost" id="askclear">Reset</button>
+      </div>
+      <div class="ex" id="examples"></div>
+      <div class="filters" id="filters"></div>
+      <div class="chips" id="activechips"></div>
+      <div id="answer"></div>
+      <div class="tablewrap"><table id="asktbl"></table></div>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn ghost sm" id="more" style="display:none">Tampilkan lebih banyak</button>
+        <button class="btn ghost sm" id="export" style="display:none">⬇ Unduh hasil (CSV)</button>
+      </div>
+    </div>
+  </section>
+</main>
+<footer>Versi aplikasi: <b>v0.10 · 25 Nov 2026</b> · Data dibaca langsung dari Google Sheets "Bank Data Pengawasan & Pengaduan 2018–2026" setiap kali halaman dibuka · tidak disimpan di server mana pun</footer>
+
+<script>
+/* ======================= PENGATURAN ======================= */
+const CFG = {
+  SHEET_ID : '1dyO5UyA5UKTj9aUzPB2W-3FVKR-CpGldiblT4amHHLE',
+  SHEET_PT : 'Per PT',
+  SHEET_DASH : 'Data Dashboard (otomatis)',
+  SHEET_DENDA : 'Data Denda Dashboard (otomatis)',   // SK sanksi + berkas denda (opsional, untuk tautan SA)
+  SHEET_ARSIP : 'Arsip Berkas',                      // daftar berkas (opsional, untuk tautan dokumen tambahan)
+  // Baris judul kolom pada tiap sheet. Kalau bergeser, aplikasi otomatis mencoba mode "cari sendiri".
+  HEADER_ROW : { pt:4, dash:1, denda:1, arsip:4 },
+  // OPSIONAL: link CSV dari File > Bagikan > Publikasikan ke web (pilih sheet + format CSV). Dicoba paling dulu.
+  PUBLISHED : { pt:'', dash:'', denda:'', arsip:'' },
+  TIMEOUT_MS : 15000
+};
+/* ========================================================== */
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const rp = n => 'Rp ' + new Intl.NumberFormat('id-ID').format(n||0);
+const rpS = n => n>=1e9 ? 'Rp '+(n/1e9).toFixed(2).replace('.',',')+' M' : n>=1e6 ? 'Rp '+Math.round(n/1e6)+' jt' : rp(n);
+const fmtD = d => d ? d.toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}) : '';
+const uniq = a => [...new Set(a)];
+const low = s => String(s||'').toLowerCase();
+const num = v => { if(v==null||v==='') return 0; const s=String(v); if(/e\+?\d/i.test(s)&&!isNaN(Number(s))) return Math.round(Number(s)); return parseInt(s.replace(/[^\d]/g,''),10)||0; };
+
+/* ---------- ambil & baca CSV ---------- */
+function parseCSV(t){
+  const rows=[]; let r=[],f='',q=false;
+  for(let i=0;i<t.length;i++){
+    const c=t[i];
+    if(q){ if(c==='"'){ if(t[i+1]==='"'){f+='"';i++;} else q=false; } else f+=c; }
+    else if(c==='"') q=true;
+    else if(c===',') {r.push(f);f='';}
+    else if(c==='\n'){r.push(f);rows.push(r);r=[];f='';}
+    else if(c!=='\r') f+=c;
+  }
+  if(f!==''||r.length){r.push(f);rows.push(r);}
+  return rows;
+}
+function toObjects(rows,keyCol='Nama Usaha/Kegiatan'){
+  const hi=rows.findIndex(r=>r.some(c=>c.trim()===keyCol));
+  if(hi<0) throw new Error('Judul kolom "'+keyCol+'" tidak ditemukan');
+  const H=rows[hi].map(h=>h.trim());
+  return rows.slice(hi+1).map(r=>{const o={};H.forEach((h,i)=>{if(h&&!(h in o))o[h]=(r[i]||'').trim();});return o;});
+}
+const pick=(o,prefix)=>{const k=Object.keys(o).find(k=>k.startsWith(prefix));return k?o[k]:'';};
+/* ---------- tanggal ---------- */
+function dateOrder(vals){let dm=false,md=false;for(const v of vals){const m=/^(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(v||'');if(m){if(+m[1]>12)dm=true;if(+m[2]>12)md=true;}}return dm&&!md?'dmy':'mdy';}
+function parseD(v,order){
+  v=(v||'').trim(); if(!v) return null;
+  let m=/^(\d{4})-(\d{2})-(\d{2})/.exec(v); if(m) return new Date(+m[1],+m[2]-1,+m[3]);
+  m=/^(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(v); if(!m) return null;
+  const a=+m[1],b=+m[2],y=+m[3]; const d=order==='dmy'?a:b, mo=order==='dmy'?b:a;
+  const dt=new Date(y,mo-1,d); return isNaN(dt)?null:dt;
+}
+
+/* ---------- bentuk data ---------- */
+let U=[], V=[], KAB=[], PENGAWAS=[], YEARS=[];
+/* ---- pencocokan nama usaha yang fleksibel ---- */
+const nameKey=s=>low(s).replace(/[.,]/g,' ').replace(/[^a-z0-9()\/&\- ]/g,' ').replace(/\s+/g,' ').trim();           // abaikan huruf besar/kecil, titik, koma, spasi ganda
+const nameKey2=s=>nameKey(s).replace(/\([^)]*\)/g,' ').replace(/^(pt|cv|ud|pd|pg|koperasi)\s+/,'').replace(/\b(tbk|persero)\b/g,' ').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim(); // juga abaikan awalan PT/CV/UD, (…), Tbk
+const urlsOf=s=>(s||'').match(/https?:\/\/[^\s,;"'<>]+/g)||[];
+const dId=url=>{const m=/\/d\/([\w-]{10,})|[?&]id=([\w-]{10,})|\/folders\/([\w-]{10,})/.exec(url);return m?(m[1]||m[2]||m[3]):url.replace(/[?#].*$/,'');};
+function addDoc(u,d){
+  // Setiap file tetap masuk kelompok sesuai sheet/kolom asalnya (tidak dipindah-pindah antar sheet).
+  // File yang sama boleh muncul di lebih dari satu kelompok (mis. tercatat BA di Dashboard & SA di Arsip).
+  const id=dId(d.url);
+  const ex=u.docs.find(x=>x.id===id&&x.grp===d.grp);
+  if(ex){ if(!ex.srcs.includes(d.src)) ex.srcs.push(d.src); return; }
+  u.docs.push({...d,id,srcs:[d.src]});
+}
+function arsipGroup(jenis){
+  if(/^berkas fisik/i.test(jenis||'')) return null;
+  if(/berita acara/i.test(jenis)||/^BA\b/.test(jenis)) return 'ba';
+  if(/\bSA\b|sanksi|teguran|pencabutan|perpanjangan/i.test(jenis)) return 'sa';
+  return 'tl';
+}
+let ARSIP_NOURL=0, ARSIP_URLCOLS=[], TRUTH=new Map();
+function build(csvPT, csvDash, csvDenda, csvArsip){
+  const P=toObjects(parseCSV(csvPT)).filter(o=>o['Nama Usaha/Kegiatan'] && o['Nama Usaha/Kegiatan']!=='TOTAL');
+  const D=toObjects(parseCSV(csvDash)).filter(o=>o['Nama Usaha/Kegiatan']);
+  const ordP=dateOrder(P.flatMap(o=>[o['Tgl Kegiatan Terakhir'],o['Tgl SA Terakhir']]));
+  const ordD=dateOrder(D.map(o=>o['Tgl Mulai']));
+  const by1=new Map(), by2=new Map(); U=[]; ARSIP_NOURL=0; ARSIP_URLCOLS=[]; TRUTH=new Map();
+  const reg=u=>{u.kk=nameKey(u.kab);u.docs=[];u.docsNoUrl=[];[[by1,nameKey(u.nama)],[by2,nameKey2(u.nama)]].forEach(([m,k])=>{if(!k)return;if(!m.has(k))m.set(k,[]);m.get(k).push(u);});};
+  // nama sama tetapi beda Kab/Kota = usaha/cabang berbeda → cocokkan nama + Kab/Kota dulu
+  const resolve=(nama,kab)=>{const kk=nameKey(kab);
+    for(const [m,k] of [[by1,nameKey(nama)],[by2,nameKey2(nama)]]){const c=k&&m.get(k); if(!c)continue; return c.find(u=>u.kk===kk)||c[0];}
+    return null;};
+  const newU=(nama,kab)=>{const u=mk({'Nama Usaha/Kegiatan':nama,'Kab/Kota':kab});u.id=U.length;U.push(u);reg(u);return u;};
+  const mk=o=>({nama:o['Nama Usaha/Kegiatan'],kab:o['Kab/Kota']||'',asal:o['Asal Kasus']||'',posisi:o['Posisi / Tindak Lanjut Terakhir']||'',
+    saStatus:o['Status SA']||'',riwayat:pick(o,'Riwayat Singkat'),nAwas:num(o['Pengawasan (kali)']),nAdu:num(o['Verif./Pengaduan (kali)']),nApbn:num(o['Dana APBN (kali)']),
+    kegAkhir:o['Kegiatan Terakhir']||'',tglAkhir:parseD(o['Tgl Kegiatan Terakhir'],ordP),pengawas:o['Pengawas LH yang Pernah Bertugas']||'',
+    temuan:o['Temuan Terakhir (Rekap)']||'',tl:o['TL Terakhir (Rekap)']||'',saAkhir:o['SA / Pencabutan Terakhir']||'',tglSA:parseD(o['Tgl SA Terakhir'],ordP),
+    denda:num(o['Denda (Rp)']),bayar:(o['Status Bayar Denda']||'').toUpperCase(),arsip:o['Lokasi Arsip Fisik']||'',nBerkas:num(o['Jml Berkas Digital']),visits:[],lokasiSet:new Set()});
+  P.forEach(o=>{const u=mk(o);u.id=U.length;U.push(u);reg(u);});
+  V=[];
+  D.forEach(o=>{
+    const u=resolve(o['Nama Usaha/Kegiatan'],o['Kab/Kota'])||newU(o['Nama Usaha/Kegiatan'],o['Kab/Kota']);
+    const tgl=parseD(o['Tgl Mulai'],ordD);
+    const urls=c=>(o[c]||'').match(/https?:\/\/[^\s,;"']+/g)||[];
+    const v={u,tahun:num(o['Tahun'])||(tgl?tgl.getFullYear():0),jenis:o['Jenis Kegiatan']||'',tgl,tglTeks:o['Tanggal Pelaksanaan']||'',
+      uraian:o['Uraian Aduan / Nama di Rekap']||'',jenisUsaha:o['Jenis Usaha']||'',pengawas:o['Pengawas LH yang Bertugas']||'',sumber:o['Sumber Dana']||'',
+      persetujuan:o['Persetujuan Lingkungan']||'',temuan:o['Status Ketaatan / Temuan BA']||'',tl:o['Tindak Lanjut']||'',denda:num(o['Denda (Rp)']),
+      evaluasi:o['Evaluasi SA / TL Perusahaan / Monitoring']||'',ba:urls('URL BA'),sa:urls('URL SA'),tln:urls('URL TL ND'),lain:urls('URL Lain'),linkTxt:{ba:o['Link BA']||'',sa:o['Link SA']||'',tln:o['Link TL / ND']||'',lain:o['Link Lain']||''}};
+    v.isAdu=!/^pengawasan/i.test(v.jenis);
+    v.sortKey=tgl?tgl.getTime():new Date(v.tahun||1990,0,1).getTime();
+    v.hay=low([v.uraian,v.jenisUsaha,v.pengawas,v.sumber,v.persetujuan,v.temuan,v.tl,v.evaluasi,v.jenis,v.tglTeks].join(' | '));
+    u.visits.push(v); V.push(v);
+  });
+  // ===== kumpulkan SEMUA tautan dokumen: (1) Sanksi & Denda, (2) Data Dashboard, (3) Arsip Berkas =====
+  const DN=csvDenda?toObjects(parseCSV(csvDenda),'Nama Usaha').filter(o=>o['Nama Usaha']):[];
+  const ordN=dateOrder(DN.flatMap(o=>[o['Tanggal'],o['Tgl Urut']]));
+  const AR=csvArsip?toObjects(parseCSV(csvArsip),'Nama Usaha').filter(o=>o['Nama Usaha']):[];
+  const ordA=dateOrder(AR.map(o=>o['Tanggal']));
+  const arUrlCols=AR.length?Object.keys(AR[0]).filter(k=>/url|link/i.test(k)):[]; ARSIP_URLCOLS=arUrlCols.filter(k=>/url/i.test(k)||AR.some(o=>/https?:\/\//.test(o[k]||'')));
+  DN.forEach(o=>{
+    const u=resolve(o['Nama Usaha'],o['Kab/Kota'])||newU(o['Nama Usaha'],o['Kab/Kota']);
+    const tg=parseD(o['Tgl Urut'],ordN)||parseD(o['Tanggal'],ordN), th=num(o['Tahun']);
+    const label=[o['Jenis Dokumen'],o['Nomor SK / Surat']].filter(Boolean).join(' · ')||'SK Sanksi';
+    const info=o['Nominal Denda (Rp)']?'Denda '+rp(num(o['Nominal Denda (Rp)']))+(o['Status Bayar']?' ('+o['Status Bayar']+')':''):'';
+    const base={grp:'sa',type:o['Jenis Dokumen']||'SK Sanksi',tglTeks:tg?fmtD(tg):(o['Tanggal']||o['Tahun']||''),sortKey:tg?tg.getTime():(th?new Date(th,0,1).getTime():0),info,src:'Sanksi & Denda (SK)'};
+    const urls=['URL SK','URL SK 2','Link','Link 2'].flatMap(c=>urlsOf(o[c]));
+    const uq=urls.filter((x,i)=>urls.findIndex(y=>dId(y)===dId(x))===i);
+    uq.forEach((url,i)=>addDoc(u,{...base,url,label:label+(uq.length>1?' (berkas '+(i+1)+')':'')}));
+    if(!uq.length) u.docsNoUrl.push({...base,url:'',label});
+  });
+  V.forEach(v=>{
+    const d=v.tgl?fmtD(v.tgl):(v.tglTeks||String(v.tahun||''));
+    [['ba','ba','BA'],['sa','sa','SA'],['tl','tln','TL / ND'],['tl','lain','Berkas lain']].forEach(([g0,k,ty0])=>v[k].forEach((url,i)=>{
+      // Teks di kolom "Link ..." (mis. "Lihat BA") lebih dipercaya daripada nama kolom URL
+      const t=(v.linkTxt[k]||'').toUpperCase(); let g=g0,ty=ty0;
+      if(/\bBA\b/.test(t)){g='ba';ty='BA';} else if(/\bSA\b/.test(t)){g='sa';ty='SA';} else if(/\b(TL|ND|LHP)\b|BERKAS/.test(t)){g='tl';ty='TL / ND';}
+      addDoc(v.u,{grp:g,type:ty,label:ty+' · '+(v.jenis||'kegiatan')+(v[k].length>1?' ('+(i+1)+')':''),tglTeks:d,sortKey:v.sortKey,url,src:'Dashboard '+ty0+(ty!==ty0?' (teks: '+(v.linkTxt[k]||'')+')':''),info:''});
+    }));
+  });
+  AR.forEach(o=>{
+    const u=resolve(o['Nama Usaha'],o['Kab/Kota'])||newU(o['Nama Usaha'],o['Kab/Kota']);
+    const lk=(o['Lokasi Fisik (Lemari)']||'').trim(); if(lk) u.lokasiSet.add(lk);   // lokasi lemari dari Arsip Berkas (termasuk berkas fisik)
+    const g=arsipGroup(o['Jenis Berkas']||''); if(!g) return;
+    const tg=parseD(o['Tanggal'],ordA);
+    const urls=arUrlCols.map(k=>o[k]).flatMap(urlsOf);
+    const d={grp:g,type:o['Jenis Berkas']||'Berkas',label:o['Nama Berkas']||o['Jenis Berkas']||'Berkas',tglTeks:tg?fmtD(tg):(o['Tanggal']||''),sortKey:tg?tg.getTime():0,info:'',src:'Arsip: '+(o['Jenis Berkas']||'Berkas')};
+    if(urls.length) urls.forEach((url,i)=>addDoc(u,{...d,url,label:d.label+(urls.length>1?' ('+(i+1)+')':'')}));
+    else if((o['Link Digital']||'').trim()){ u.docsNoUrl.push({...d,url:''}); ARSIP_NOURL++; }
+  });
+  // Cek SA yang ternyata file BA yang sama (sering karena link disalin dari baris BA di sheet)
+  U.forEach(u=>{
+    u.docsWarn=[];
+    const baIds=new Set(u.docs.filter(d=>d.grp==='ba').map(d=>d.id));
+    const fromDenda=new Set(u.docs.filter(d=>d.grp==='sa'&&d.srcs.some(x=>/Sanksi/.test(x))).map(d=>d.id));
+    u.docs=u.docs.filter(d=>{
+      if(d.grp!=='sa'||fromDenda.has(d.id)) return true;
+      const namaBA=/^\s*BA\b/i.test(d.label)&&!/\bSA\b/i.test(d.label);   // nama file BA, tercatat SA
+      if(!baIds.has(d.id)&&!namaBA) return true;
+      u.docsWarn.push(d); return false;   // SA = file BA yang sama, tidak ditampilkan di tombol SA
+    });
+  });
+  U.forEach(u=>{
+    u.lokasiList=uniq([u.arsip,...u.lokasiSet].map(x=>(x||'').trim()).filter(Boolean));
+    u.docs.sort((a,b)=>b.sortKey-a.sortKey); u.docsNoUrl.sort((a,b)=>b.sortKey-a.sortKey);
+    u.visits.sort((a,b)=>b.sortKey-a.sortKey);
+    u.jenisUsaha=(u.visits.find(v=>v.jenisUsaha)||{}).jenisUsaha||'';
+    u.hasSA=!!u.saStatus && u.saStatus!=='–' && u.saStatus!=='-';
+    u.uHay=low([u.nama,u.kab,u.asal,u.posisi,u.riwayat,u.kegAkhir,u.pengawas,u.temuan,u.tl,u.saAkhir,u.arsip,u.jenisUsaha].join(' | '));
+    u.vHay=u.visits.map(v=>v.hay).join(' | ');
+    u.key=low(u.nama);
+  });
+  KAB=uniq(U.map(u=>u.kab).filter(Boolean)).sort();
+  const names=[];
+  [...V.map(v=>v.pengawas),...U.map(u=>u.pengawas)].forEach(s=>s.split(/,|&|\bdan\b/i).forEach(n=>{n=n.trim();if(n&&!/tidak tercatat|PIC|^\(/i.test(n)&&n.length<40)names.push(n);}));
+  PENGAWAS=uniq(names).sort();
+  YEARS=uniq(V.map(v=>v.tahun).filter(Boolean)).sort();
+}
+
+/* ---------- navigasi ---------- */
+document.querySelectorAll('nav button').forEach(b=>b.addEventListener('click',()=>show(b.dataset.view)));
+function show(v){
+  document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id===v));
+  document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active',x.dataset.view===v));
+  window.scrollTo({top:0});
+}
+
+/* ================= DASHBOARD ================= */
+let kabMetric='usaha';
+function renderDash(){
+  const tot=U.length, nAwas=U.reduce((s,u)=>s+u.nAwas,0), nAdu=U.reduce((s,u)=>s+u.nAdu,0);
+  const denda=U.reduce((s,u)=>s+u.denda,0), sudah=U.filter(u=>u.bayar==='SUDAH').reduce((s,u)=>s+u.denda,0), belum=U.filter(u=>u.bayar==='BELUM').reduce((s,u)=>s+u.denda,0);
+  const saAktif=U.filter(u=>/BELUM DICABUT/i.test(u.saStatus)).length, saCabut=U.filter(u=>/^SUDAH DICABUT/i.test(u.saStatus)).length;
+  $('#kpis').innerHTML=`
+    <div class="kpi"><div class="lbl">Usaha / kegiatan</div><div class="val">${tot}</div><div class="sub">${KAB.length} Kab/Kota</div></div>
+    <div class="kpi c3"><div class="lbl">Pengawasan</div><div class="val">${nAwas}</div><div class="sub">${V.filter(v=>!v.isAdu).length} kegiatan tercatat</div></div>
+    <div class="kpi c2"><div class="lbl">Verifikasi / Pengaduan</div><div class="val">${nAdu}</div><div class="sub">${tot?Math.round(nAdu/(nAwas+nAdu||1)*100):0}% dari seluruh kegiatan</div></div>
+    <div class="kpi"><div class="lbl">Sanksi administratif</div><div class="val">${saAktif+saCabut}</div><div class="sub">${saAktif} belum dicabut · ${saCabut} dicabut</div></div>
+    <div class="kpi bad"><div class="lbl">Total denda</div><div class="val" style="font-size:22px">${rp(denda)}</div><div class="sub">${rpS(sudah)} dibayar · ${rpS(belum)} belum</div></div>`;
+
+  // per tahun
+  const perY=YEARS.map(y=>({y,a:V.filter(v=>v.tahun===y&&!v.isAdu).length,p:V.filter(v=>v.tahun===y&&v.isAdu).length}));
+  const mx=Math.max(1,...perY.map(r=>r.a+r.p));
+  $('#yearchart').innerHTML=perY.map(r=>`<div class="ycol" title="${r.y}: ${r.a} pengawasan, ${r.p} pengaduan"><div class="ytot">${r.a+r.p}</div>
+    <div class="ystack" style="height:${(r.a+r.p)/mx*150}px">${r.a?`<div style="height:${r.a/(r.a+r.p)*100}%;background:var(--c3)"></div>`:''}${r.p?`<div style="height:${r.p/(r.a+r.p)*100}%;background:var(--c2)"></div>`:''}</div><div class="ylab">${r.y}</div></div>`).join('');
+  $('#legend').innerHTML='<span><i style="background:var(--c3)"></i>Pengawasan</span><span><i style="background:var(--c2)"></i>Verifikasi/Pengaduan</span>';
+
+  renderKab();
+
+  // denda
+  const lain=denda-sudah-belum;
+  $('#dendasub').textContent=U.filter(u=>u.denda>0).length+' usaha';
+  $('#dendabox').innerHTML=`<div class="prop"><div style="width:${sudah/(denda||1)*100}%;background:var(--ok,#1f7a52)"></div><div style="width:${belum/(denda||1)*100}%;background:var(--bad)"></div><div style="width:${lain/(denda||1)*100}%;background:#b8c4be"></div></div>
+    <div class="proplegend"><span><i style="background:#1f7a52"></i>Sudah dibayar ${rp(sudah)}</span><span><i style="background:var(--bad)"></i>Belum dibayar ${rp(belum)}</span>${lain>0?`<span><i style="background:#b8c4be"></i>Status kosong ${rp(lain)}</span>`:''}</div>`;
+  const bl=U.filter(u=>u.bayar==='BELUM').sort((a,b)=>b.denda-a.denda);
+  $('#dendatbl').innerHTML='<thead><tr><th>Usaha</th><th>Kab/Kota</th><th class="num">Denda</th></tr></thead><tbody>'+(bl.map(u=>`<tr class="click" data-id="${u.id}"><td>${esc(u.nama)}</td><td>${esc(u.kab)}</td><td class="num">${rp(u.denda)}</td></tr>`).join('')||'<tr><td colspan="3">Tidak ada.</td></tr>')+'</tbody>';
+
+  // SA
+  const tanpa=tot-saAktif-saCabut;
+  $('#sabox').innerHTML=`<div class="prop"><div style="width:${saAktif/tot*100}%;background:var(--c2)"></div><div style="width:${saCabut/tot*100}%;background:#1f7a52"></div><div style="width:${tanpa/tot*100}%;background:#d5ddd9"></div></div>
+    <div class="proplegend"><span><i style="background:var(--c2)"></i>Belum dicabut ${saAktif}</span><span><i style="background:#1f7a52"></i>Sudah dicabut ${saCabut}</span><span><i style="background:#d5ddd9"></i>Tanpa SA ${tanpa}</span></div>`;
+  const lt=[...V].sort((a,b)=>b.sortKey-a.sortKey).slice(0,8);
+  $('#latesttbl').innerHTML='<thead><tr><th>Tanggal</th><th>Usaha</th><th>Jenis</th></tr></thead><tbody>'+lt.map(v=>`<tr class="click" data-id="${v.u.id}"><td>${v.tgl?fmtD(v.tgl):esc(v.tglTeks||v.tahun)}</td><td>${esc(v.u.nama)}<div style="font-size:11px;color:var(--muted)">${esc(v.u.kab)}</div></td><td>${esc(v.jenis)}</td></tr>`).join('')+'</tbody>';
+  document.querySelectorAll('#dash tr.click').forEach(tr=>tr.addEventListener('click',()=>openProfile(+tr.dataset.id)));
+}
+function renderKab(){
+  const m={}; U.forEach(u=>{if(!u.kab)return;m[u.kab]=(m[u.kab]||0)+(kabMetric==='usaha'?1:kabMetric==='awas'?u.nAwas:u.nAdu);});
+  const arr=Object.entries(m).sort((a,b)=>b[1]-a[1]).filter(x=>x[1]>0), mx=Math.max(1,...arr.map(x=>x[1]));
+  $('#kabchart').innerHTML=arr.map(([k,n])=>`<div class="hbar" data-kab="${esc(k)}" role="button" tabindex="0"><div class="name" title="${esc(k)}">${esc(k)}</div><div class="track"><div class="fill" style="width:${n/mx*100}%"></div></div><div class="n">${n}</div></div>`).join('');
+  document.querySelectorAll('.hbar').forEach(el=>{const go=()=>{$('#q').value='';$('#s-sa').value='';$('#s-kab').value=el.dataset.kab;sel=null;$('#layout').classList.remove('detail-open');show('cari');doSearch();};el.addEventListener('click',go);el.addEventListener('keydown',e=>{if(e.key==='Enter')go();});});
+}
+document.querySelectorAll('#kabseg button').forEach(b=>b.addEventListener('click',()=>{kabMetric=b.dataset.m;document.querySelectorAll('#kabseg button').forEach(x=>x.classList.toggle('on',x===b));renderKab();}));
+
+/* ================= CARI & PROFIL ================= */
+let sel=null, shown=60, hasil=[];
+const norm=s=>low(s).replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim();
+['q','s-kab','s-sa'].forEach(id=>$('#'+id).addEventListener(id==='q'?'input':'change',()=>{shown=60;doSearch();}));
+$('#q').addEventListener('keydown',e=>{if(e.key==='Enter'){const f=document.querySelector('.res');if(f)f.click();}});
+function doSearch(){
+  const toks=norm($('#q').value).split(' ').filter(Boolean), kab=$('#s-kab').value, f=$('#s-sa').value;
+  hasil=U.filter(u=>{
+    if(kab&&u.kab!==kab)return false;
+    if(f==='ada'&&!u.hasSA)return false; if(f==='tanpa'&&u.hasSA)return false;
+    if(f==='belum'&&!/BELUM DICABUT/i.test(u.saStatus))return false; if(f==='sudah'&&!/^SUDAH DICABUT/i.test(u.saStatus))return false;
+    if(f==='dendabelum'&&u.bayar!=='BELUM')return false;
+    return true;
+  }).map(u=>{let s=0;const n=norm(u.nama);for(const t of toks){if(!n.includes(t)){if(!norm(u.kab+' '+u.jenisUsaha).includes(t)){s=-1;break;}s+=1;}else s+=n.startsWith(t)?13:10;}return {u,s};})
+   .filter(x=>x.s>=0).sort((a,b)=>b.s-a.s||((b.u.tglAkhir||0)-(a.u.tglAkhir||0))||a.u.nama.localeCompare(b.u.nama)).map(x=>x.u);
+  renderList(toks);
+}
+function hl(t,toks){let h=esc(t);toks.forEach(k=>{if(k.length<2)return;h=h.replace(new RegExp('('+k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','ig'),'<mark>$1</mark>');});return h;}
+function saBadge(u){
+  if(!u.hasSA)return '<span class="badge b-mute">Tanpa SA</span>';
+  return /^SUDAH/i.test(u.saStatus)?'<span class="badge b-ok">SA dicabut</span>':'<span class="badge b-warn">SA belum dicabut</span>';
+}
+function dendaBadge(u){
+  if(!u.denda)return ''; return u.bayar==='SUDAH'?'<span class="badge b-ok">Denda dibayar</span>':u.bayar==='BELUM'?'<span class="badge b-bad">Denda belum dibayar</span>':'<span class="badge b-mute">Denda</span>';
+}
+function renderList(toks){
+  $('#count').textContent=`${hasil.length} usaha/kegiatan ditemukan`+(hasil.length>shown?` (menampilkan ${shown})`:'');
+  const items=hasil.slice(0,shown).map(u=>`<button class="res ${sel===u.id?'sel':''}" data-id="${u.id}"><div class="t">${hl(u.nama,toks)}</div>
+    <div class="m">${esc(u.kab||'-')}${u.jenisUsaha?' · '+esc(u.jenisUsaha):''}</div>
+    <div class="chips"><span class="badge b-info">${u.nAwas} awas · ${u.nAdu} adu</span> ${saBadge(u)} ${dendaBadge(u)}</div></button>`).join('');
+  $('#results').innerHTML=(items||'<div class="empty">Tidak ada usaha yang cocok.<br>Coba kata kunci lain.</div>')+(hasil.length>shown?'<button class="btn ghost" id="moreres">Tampilkan lebih banyak</button>':'');
+  document.querySelectorAll('.res').forEach(b=>b.addEventListener('click',()=>openProfile(+b.dataset.id,true)));
+  $('#moreres')?.addEventListener('click',()=>{shown+=60;renderList(toks);});
+  if(sel===null)$('#detail').innerHTML='<div class="empty">Pilih salah satu usaha di daftar untuk melihat profil 360°<br>(riwayat, temuan, status SA, denda, lokasi arsip, dan dokumen).</div>';
+}
+function openProfile(id,stay){
+  sel=id;
+  if(!stay){ show('cari'); if(!document.querySelector('.res[data-id="'+id+'"]')){$('#q').value=U[id].nama;$('#s-kab').value='';$('#s-sa').value='';doSearch();} }
+  document.querySelectorAll('.res').forEach(b=>b.classList.toggle('sel',+b.dataset.id===id));
+  $('#layout').classList.add('detail-open');
+  $('#detail').innerHTML=profil(U[id]);
+  $('#detail .back')?.addEventListener('click',()=>$('#layout').classList.remove('detail-open'));
+  document.querySelectorAll('#detail [data-g]').forEach(b=>b.addEventListener('click',()=>{const o=$('#dp-'+b.dataset.g).classList.toggle('open');b.setAttribute('aria-expanded',o);}));
+  $('#detail').scrollIntoView({block:'start'});
+}
+function docBtns(v){
+  const mk=(arr,lbl,ic)=>arr.map((u,i)=>`<a class="btn sm" href="${esc(u)}" target="_blank" rel="noopener">${ic} ${lbl}${arr.length>1?' '+(i+1):''}</a>`).join('');
+  return mk(v.ba,'BA','📄')+mk(v.sa,'SA','📑')+mk(v.tln,'TL/ND','📎')+mk(v.lain,'Lainnya','🗂');
+}
+const GRP=[['ba','BA','📄','Berita Acara (BA)'],['sa','SA / SK Sanksi','📑','SK Sanksi Administratif & berkas denda'],['tl','TL / ND / Berkas Lain','📎','Tindak Lanjut, Nota Dinas & berkas lain']];
+function docRow(d){return `<li><a href="${esc(d.url)}" target="_blank" rel="noopener">${d.folder?'📁':'🔗'} ${esc(d.label)}</a><div class="dm">${esc(d.type)}${d.tglTeks?' · '+esc(d.tglTeks):''}${d.info?' · '+esc(d.info):''}<span class="srcs">${d.srcs.map(x=>`<i>${esc(x)}</i>`).join('')}</span></div></li>`;}
+function docsSection(u){
+  let anyNu=0;
+  const per=GRP.map(([g,lbl,ic,title])=>({g,lbl,ic,title,ds:u.docs.filter(d=>d.grp===g),nu:u.docsNoUrl.filter(d=>d.grp===g)}));
+  const btns=per.map(x=>{
+    anyNu+=x.nu.length;
+    if(!x.ds.length&&!x.nu.length) return `<span class="btn off" title="Belum ada dokumen">${x.ic} ${x.lbl} <small>(belum ada)</small></span>`;
+    if(x.ds.length===1&&!x.nu.length) return `<a class="btn" href="${esc(x.ds[0].url)}" target="_blank" rel="noopener">${x.ic} ${x.lbl}</a>`;
+    const c=x.ds.length?x.ds.length+' berkas'+(x.nu.length?' + '+x.nu.length+' tanpa tautan':''):x.nu.length+' tercatat, tanpa tautan';
+    return `<button class="btn ${x.ds.length?'':'ghost'}" data-g="${x.g}" aria-expanded="false">${x.ic} ${x.lbl} <small>(${c})</small> ▾</button>`;
+  }).join('');
+  const panels=per.filter(x=>x.ds.length>1||x.nu.length).map(x=>`<div class="dpanel" id="dp-${x.g}"><h4>${x.title}</h4>
+    ${x.ds.length?`<ul class="dlist">${x.ds.map(docRow).join('')}</ul>`:''}
+    ${x.nu.length?`<div class="dnu">Tercatat di Arsip Berkas / Sanksi, tautan belum terbaca (${x.nu.length}):<ul>${x.nu.slice(0,40).map(d=>`<li>${esc(d.label)}<span class="dm"> · ${esc(d.type)}${d.tglTeks?' · '+esc(d.tglTeks):''}</span></li>`).join('')}</ul>${x.nu.length>40?'<div>…dan '+(x.nu.length-40)+' lainnya</div>':''}</div>`:''}</div>`).join('');
+  return `<div class="sec"><h3>Dokumen <small style="font-weight:400;color:var(--muted)">(${u.docs.length} tautan dari Data Dashboard, Sanksi & Denda, dan Arsip Berkas)</small></h3>
+    <div class="files">${btns}</div>${panels}
+    ${u.docsWarn&&u.docsWarn.length?`<div class="banner warn" style="margin-top:10px">⚠ Ada ${u.docsWarn.length} baris SA di sheet yang menunjuk ke file BA yang sama, jadi tidak ditampilkan sebagai SA: ${u.docsWarn.map(d=>esc(d.label)+' <span class="dm">('+esc(d.srcs.join(', '))+')</span>').join('; ')}. Perbaiki link SA di sheet supaya tombol SA benar.</div>`:''}
+    ${anyNu&&ARSIP_NOURL?`<div class="hint">Sebagian berkas Arsip Berkas tercatat tetapi tautannya tidak ikut terbaca (sheet hanya menyimpan teks "Lihat Dokumen"). Kolom URL yang terdeteksi di Arsip Berkas: <b>${ARSIP_URLCOLS.length?esc(ARSIP_URLCOLS.join(', ')):'belum ada'}</b>. Pastikan ada kolom berjudul mengandung "URL" (mis. <b>URL Digital</b>) yang berisi alamat link lengkap (https://…).</div>`:''}</div>`;
+}
+function profil(u){
+  const last=(k)=>{const v=u.visits.find(x=>x[k].length);return v?v[k][0]:'';};
+  const cnt=k=>u.visits.reduce((s,v)=>s+v[k].length,0);
+  const fb=(lbl,k,ic)=>{const url=last(k);return url?`<a class="btn" href="${esc(url)}" target="_blank" rel="noopener">${ic} ${lbl} <small>(terbaru · ${cnt(k)} berkas)</small></a>`:`<span class="btn off" title="Belum ada tautan">${ic} ${lbl} <small>(belum ada)</small></span>`;};
+  const pw=uniq(u.pengawas.split(/,|&/).map(s=>s.trim()).filter(s=>s&&!/tidak tercatat/i.test(s)));
+  return `<div class="card">
+   <button class="btn ghost back">← Kembali ke daftar</button>
+   <div class="profile-h"><div><h2>${esc(u.nama)}</h2><div class="sub">${esc(u.kab||'-')}${u.jenisUsaha?' · '+esc(u.jenisUsaha):''}</div></div>
+     <button class="btn ghost sm noprint" onclick="window.print()">🖨 Cetak</button></div>
+   <div class="chips" style="margin-top:10px">${saBadge(u)} ${dendaBadge(u)} <span class="badge b-info">${u.nAwas} pengawasan</span> <span class="badge b-info">${u.nAdu} verifikasi/pengaduan</span></div>
+   <div class="info">
+     <div><span class="k">Asal kasus</span>${esc(u.asal||'-')}</div>
+     <div><span class="k">Kegiatan terakhir</span>${esc(u.kegAkhir||'-')}${u.tglAkhir?' · '+fmtD(u.tglAkhir):''}</div>
+     <div><span class="k">Status SA</span>${esc(u.saStatus||'-')}</div>
+     <div><span class="k">SA / pencabutan terakhir</span>${esc(u.saAkhir||'-')}${u.tglSA?' · '+fmtD(u.tglSA):''}</div>
+     <div><span class="k">Denda</span>${u.denda?`<b>${rp(u.denda)}</b> · ${esc(u.bayar||'status belum tercatat')}`:'Tidak ada denda'}</div>
+     <div><span class="k">📁 Lokasi arsip fisik</span>${u.lokasiList&&u.lokasiList.length?u.lokasiList.map(esc).join(' · '):'Belum tercatat'}</div>
+     <div><span class="k">Berkas digital di arsip</span>${u.nBerkas} berkas</div>
+     <div><span class="k">Didanai APBN</span>${u.nApbn} kali</div>
+   </div>
+   ${u.posisi?`<div class="block"><span class="k">Posisi / tindak lanjut terakhir</span>${esc(u.posisi)}</div>`:''}
+   ${u.riwayat?`<div class="block"><span class="k">Riwayat singkat</span>${esc(u.riwayat)}</div>`:''}
+   ${u.temuan?`<div class="block"><span class="k">Temuan terakhir (rekap)</span>${esc(u.temuan)}</div>`:''}
+   ${u.tl?`<div class="block"><span class="k">TL terakhir (rekap)</span>${esc(u.tl)}</div>`:''}
+   ${pw.length?`<div class="sec"><h3>Pengawas LH yang pernah bertugas</h3><div class="chips">${pw.map(n=>`<span class="chip">${esc(n)}</span>`).join('')}</div></div>`:''}
+   ${docsSection(u)}
+   <div class="sec"><h3>Riwayat kegiatan (${u.visits.length})</h3>
+     ${u.visits.length?`<ul class="timeline">${u.visits.map(v=>`<li class="${v.isAdu?'pd':''}">
+       <div class="tl-top"><b>${v.tgl?fmtD(v.tgl):esc(v.tglTeks||v.tahun)}</b><span><span class="badge ${v.isAdu?'b-warn':'b-info'}">${esc(v.jenis)}</span>${v.sumber?` <span class="badge b-mute">${esc(v.sumber)}</span>`:''}</span></div>
+       ${v.uraian?`<div class="tl-row"><span>Uraian</span>${esc(v.uraian)}</div>`:''}
+       ${v.pengawas?`<div class="tl-row"><span>Pengawas</span>${esc(v.pengawas)}</div>`:''}
+       ${v.persetujuan?`<div class="tl-row"><span>Persetujuan lingkungan</span>${esc(v.persetujuan)}</div>`:''}
+       ${v.temuan?`<div class="tl-row"><span>Temuan / status ketaatan</span>${esc(v.temuan)}</div>`:''}
+       ${v.tl?`<div class="tl-row"><span>Tindak lanjut</span>${esc(v.tl)}</div>`:''}
+       ${v.denda?`<div class="tl-row"><span>Denda</span>${rp(v.denda)}</div>`:''}
+       ${v.evaluasi?`<div class="tl-row"><span>Evaluasi / monitoring</span>${esc(v.evaluasi)}</div>`:''}
+       <div class="files">${docBtns(v)||'<span style="font-size:12px;color:var(--muted)">Tidak ada tautan dokumen</span>'}</div></li>`).join('')}</ul>`
+     :'<div class="empty" style="padding:14px">Belum ada rincian kegiatan di sheet Data Dashboard (hanya arsip fisik / rekap).</div>'}
+   </div></div>`;
+}
+
+/* ================= TANYA DATA ================= */
+const EX=['sanksi belum dicabut Kab. Karanganyar','pengaduan 2025','pengawasan Eni 2026 Jepara','denda belum dibayar','tidak taat tekstil','pengawas Herlina 2024','lemari B2','SA 2026 denda'];
+const STOP=new Set('yang di dan oleh dengan untuk ke dari pada semua daftar tampilkan tampilkan cari carikan apa saja siapa berapa ada pt cv ud usaha perusahaan kegiatan data tolong mohon tahun thn kab kabupaten kota pengawas lh sudah belum dalam adalah itu ini nya atau'.split(' '));
+let st=emptyState(), askRows=[], askShown=50;
+function emptyState(){return{tahun:new Set(),saTahun:new Set(),kab:new Set(),pengawas:new Set(),jenis:'',sa:'',denda:'',text:[]};}
+$('#examples').innerHTML=EX.map(e=>`<button>${esc(e)}</button>`).join('');
+document.querySelectorAll('#examples button').forEach(b=>b.addEventListener('click',()=>{st=emptyState();$('#ask').value=b.textContent;submitAsk();}));
+$('#askbtn').addEventListener('click',submitAsk);
+$('#ask').addEventListener('keydown',e=>{if(e.key==='Enter')submitAsk();});
+$('#askclear').addEventListener('click',()=>{st=emptyState();$('#ask').value='';runAsk();});
+
+function parseQuery(raw){
+  let q=' '+low(raw).replace(/[?!,;]/g,' ')+' ';
+  const years=q.match(/\b20\d{2}\b/g)||[]; q=q.replace(/\b20\d{2}\b/g,' ');
+  const mSA=/\b(sa|sanksi)\b/.test(q)||/\bdenda\b/.test(q);
+  // keywords
+  const kw=(re,fn)=>{if(re.test(q)){fn();q=q.replace(re,' ');}};
+  kw(/\b(belum|tidak)\s+(di)?bayar\w*|\bbelum lunas\b|\bmenunggak\b|\btunggakan\b/,()=>st.denda='belum');
+  kw(/\bsudah\s+(di)?bayar\w*|\blunas\b/,()=>st.denda='sudah');
+  kw(/\bdenda\b/,()=>{if(!st.denda)st.denda='ada';});
+  kw(/\bbelum\s+(di)?cabut\w*|\bmasih berlaku\b|\bsa aktif\b|\baktif\b/,()=>st.sa='belum');
+  kw(/\bsudah\s+(di)?cabut\w*|\bpencabutan\b|\bdicabut\b/,()=>st.sa='sudah');
+  kw(/\b(sanksi|sa)\b/,()=>{if(!st.sa)st.sa='ada';});
+  kw(/\b(pengaduan|aduan|verifikasi|verlap)\b/,()=>st.jenis='adu');
+  kw(/\bpengawasan\b/,()=>st.jenis=st.jenis==='adu'?'':'awas');
+  years.forEach(y=>(mSA?st.saTahun:st.tahun).add(+y));
+  // kab/kota
+  const q0=q;
+  const wantKota=/\bkota\b/.test(q), wantKab=/\b(kab|kabupaten)\b/.test(q);
+  KAB.forEach(k=>{
+    const base=low(k).replace(/^(kab\.|kota)\s*/,'').trim(), isKota=/^kota/i.test(k);
+    if(!base)return; const re=new RegExp('\\b'+base.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b');
+    if(re.test(q0)){ if((wantKota&&!isKota)||(wantKab&&!wantKota&&isKota))return; st.kab.add(k); q=q.replace(re,' '); }
+  });
+  q=q.replace(/\b(kab|kota|kabupaten)\b\.?/g,' ');
+  // pengawas
+  const words=q.split(/[\s]+/).filter(Boolean), rest=[];
+  words.forEach(w=>{
+    const w2=w.replace(/[^a-z0-9.]/g,''); if(!w2)return;
+    const hits=w2.length>=3?PENGAWAS.filter(n=>low(n).split(/[\s.,]+/).includes(w2)):[];
+    if(hits.length&&hits.length<=3)hits.forEach(h=>st.pengawas.add(h));
+    else if(!STOP.has(w2)&&w2.length>1)rest.push(w2);
+  });
+  rest.forEach(w=>{if(!st.text.includes(w))st.text.push(w);});
+}
+function submitAsk(){ parseQuery($('#ask').value); $('#ask').value=''; askShown=50; runAsk(); }
+
+function renderFilters(){
+  const opt=(arr,ph)=>`<option value="">${ph}</option>`+arr.map(a=>`<option>${esc(a)}</option>`).join('');
+  $('#filters').innerHTML=`
+   <select data-f="tahun">${opt(YEARS,'+ Tahun kegiatan')}</select>
+   <select data-f="kab">${opt(KAB,'+ Kab/Kota')}</select>
+   <select data-f="pengawas">${opt(PENGAWAS,'+ Pengawas')}</select>
+   <select data-f="jenis"><option value="">+ Jenis kegiatan</option><option value="awas">Pengawasan</option><option value="adu">Verifikasi/Pengaduan</option></select>
+   <select data-f="sa"><option value="">+ Status SA</option><option value="ada">Punya SA</option><option value="belum">SA belum dicabut</option><option value="sudah">SA sudah dicabut</option></select>
+   <select data-f="denda"><option value="">+ Denda</option><option value="ada">Ada denda</option><option value="belum">Belum dibayar</option><option value="sudah">Sudah dibayar</option></select>
+   <select data-f="saTahun">${opt(YEARS,'+ Tahun SA')}</select>`;
+  document.querySelectorAll('#filters select').forEach(s=>s.addEventListener('change',()=>{
+    const f=s.dataset.f,v=s.value; if(!v)return;
+    if(f==='tahun'||f==='saTahun')st[f].add(+v); else if(f==='kab'||f==='pengawas')st[f].add(v); else st[f]=v;
+    askShown=50; runAsk();
+  }));
+}
+const SALBL={ada:'Punya SA',belum:'SA belum dicabut',sudah:'SA sudah dicabut'}, DLBL={ada:'Ada denda',belum:'Denda belum dibayar',sudah:'Denda sudah dibayar'};
+function chipList(){
+  const c=[];
+  st.tahun.forEach(y=>c.push(['tahun',y,'Tahun '+y])); st.saTahun.forEach(y=>c.push(['saTahun',y,'SA tahun '+y]));
+  st.kab.forEach(k=>c.push(['kab',k,k])); st.pengawas.forEach(p=>c.push(['pengawas',p,'Pengawas: '+p]));
+  if(st.jenis)c.push(['jenis','',st.jenis==='adu'?'Verifikasi/Pengaduan':'Pengawasan']);
+  if(st.sa)c.push(['sa','',SALBL[st.sa]]); if(st.denda)c.push(['denda','',DLBL[st.denda]]);
+  st.text.forEach(t=>c.push(['text',t,'Kata: '+t]));
+  return c;
+}
+function runAsk(){
+  renderFilters();
+  const chips=chipList();
+  $('#activechips').innerHTML=chips.map((c,i)=>`<span class="chip x" data-i="${i}">${esc(c[2])} <b>×</b></span>`).join('');
+  document.querySelectorAll('#activechips .chip').forEach(el=>el.addEventListener('click',()=>{
+    const [f,v]=chips[+el.dataset.i]; if(f==='tahun'||f==='saTahun'||f==='kab'||f==='pengawas')st[f].delete(v); else if(f==='text')st.text=st.text.filter(t=>t!==v); else st[f]='';
+    askShown=50; runAsk();
+  }));
+  if(!chips.length){ askRows=[]; $('#answer').innerHTML='<div class="empty" style="margin-top:12px">Ketik pertanyaan di atas atau pilih contoh. Beberapa jenis pertanyaan yang bisa dijawab: <br>kegiatan per pengawas, usaha dengan SA/denda, kegiatan di Kab/Kota tertentu pada tahun tertentu, atau kata kunci temuan (mis. "tidak taat", "IPAL", "limbah B3").</div>'; $('#asktbl').innerHTML=''; $('#more').style.display=$('#export').style.display='none'; return; }
+  const needV=st.tahun.size||st.pengawas.size||st.jenis;
+  const tk=st.text;
+  askRows=[];
+  U.forEach(u=>{
+    if(st.kab.size&&!st.kab.has(u.kab))return;
+    if(st.sa==='ada'&&!u.hasSA)return; if(st.sa==='belum'&&!/BELUM DICABUT/i.test(u.saStatus))return; if(st.sa==='sudah'&&!/^SUDAH DICABUT/i.test(u.saStatus))return;
+    if(st.denda==='ada'&&!u.denda)return; if(st.denda==='belum'&&u.bayar!=='BELUM')return; if(st.denda==='sudah'&&u.bayar!=='SUDAH')return;
+    if(st.saTahun.size&&!(u.tglSA&&st.saTahun.has(u.tglSA.getFullYear())))return;
+    let m;
+    if(needV||tk.length){
+      const textOK=h=>tk.every(t=>h.includes(t));
+      if(needV){
+        m=u.visits.filter(v=>(!st.tahun.size||st.tahun.has(v.tahun))&&(!st.jenis||(st.jenis==='adu')===v.isAdu)&&(!st.pengawas.size||[...st.pengawas].some(p=>low(v.pengawas).includes(low(p))))&&textOK(u.uHay+' | '+v.hay));
+      } else { if(!textOK(u.uHay+' | '+u.vHay))return; m=u.visits; }
+      if(needV&&!m.length)return;
+    } else m=u.visits;
+    askRows.push({u,m});
+  });
+  askRows.sort((a,b)=>(b.m[0]?.sortKey||0)-(a.m[0]?.sortKey||0)||a.u.nama.localeCompare(b.u.nama));
+  const nk=askRows.reduce((s,r)=>s+r.m.length,0), dn=askRows.reduce((s,r)=>s+r.u.denda,0), db=askRows.filter(r=>r.u.bayar==='BELUM').reduce((s,r)=>s+r.u.denda,0);
+  $('#answer').innerHTML=`<div class="answer">Ditemukan <b>${askRows.length} usaha/kegiatan</b>${nk?` dengan <b>${nk} catatan kegiatan</b> yang cocok`:''}.${dn?` Total denda: <b>${rp(dn)}</b>${db?` (belum dibayar ${rp(db)})`:''}.`:''}</div>`;
+  renderAskTable();
+}
+function renderAskTable(){
+  const rows=askRows.slice(0,askShown);
+  $('#asktbl').innerHTML=rows.length?`<thead><tr><th>Usaha</th><th>Kab/Kota</th><th>Kegiatan cocok</th><th>Status SA</th><th class="num">Denda</th><th>Arsip</th></tr></thead><tbody>`+rows.map(r=>{
+    const yrs=uniq(r.m.map(v=>v.tahun).filter(Boolean)).sort().join(', ');
+    return `<tr class="click" data-id="${r.u.id}"><td><b>${esc(r.u.nama)}</b></td><td>${esc(r.u.kab)}</td><td>${r.m.length}×${yrs?` <span style="color:var(--muted)">(${yrs})</span>`:''}</td><td>${saBadge(r.u)}</td>
+      <td class="num">${r.u.denda?rp(r.u.denda)+'<br>'+dendaBadge(r.u):'-'}</td><td>${esc(r.u.arsip||'-')}</td></tr>`;}).join('')+'</tbody>':'<tbody><tr><td>Tidak ada data yang cocok. Coba hapus salah satu filter di atas.</td></tr></tbody>';
+  document.querySelectorAll('#asktbl tr.click').forEach(tr=>tr.addEventListener('click',()=>openProfile(+tr.dataset.id)));
+  $('#more').style.display=askRows.length>askShown?'':'none'; $('#export').style.display=askRows.length?'':'none';
+}
+$('#more').addEventListener('click',()=>{askShown+=50;renderAskTable();});
+$('#export').addEventListener('click',()=>{
+  const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+  const lines=[['Nama Usaha','Kab/Kota','Asal Kasus','Kegiatan cocok','Status SA','SA Terakhir','Denda (Rp)','Status Bayar','Lokasi Arsip Fisik'].map(q).join(',')];
+  askRows.forEach(r=>lines.push([r.u.nama,r.u.kab,r.u.asal,r.m.length,r.u.saStatus,r.u.saAkhir,r.u.denda||'',r.u.bayar,r.u.arsip].map(q).join(',')));
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob(['\ufeff'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'})); a.download='hasil-tanya-data.csv'; a.click();
+});
+
+/* ================= PENGAMBILAN DATA (bertingkat) ================= */
+const KEY={pt:CFG.SHEET_PT,dash:CFG.SHEET_DASH,denda:CFG.SHEET_DENDA,arsip:CFG.SHEET_ARSIP};
+const KEYCOL={pt:'Nama Usaha/Kegiatan',dash:'Nama Usaha/Kegiatan',denda:'Nama Usaha',arsip:'Nama Usaha'};
+const REQUIRED={pt:1,dash:1};
+function gvizUrl(key,fmt,hdr){
+  const rng=hdr?`&range=A${hdr}:AZ&headers=1`:'&headers=0';
+  return `https://docs.google.com/spreadsheets/d/${CFG.SHEET_ID}/gviz/tq?tqx=${fmt}${rng}&sheet=${encodeURIComponent(KEY[key])}`;
+}
+const q2=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+function gvizToCSV(o){
+  if(o.status==='error') throw new Error((o.errors&&o.errors[0]&&(o.errors[0].detailed_message||o.errors[0].message))||'Google menolak permintaan');
+  const cell=c=>{ if(!c) return ''; if(c.f!=null) return c.f; if(c.v==null) return ''; const m=/^Date\((\d+),(\d+),(\d+)/.exec(c.v); return m?`${+m[2]+1}/${+m[3]}/${m[1]}`:c.v; };
+  const lines=[]; if(o.table.cols.some(c=>c.label)) lines.push(o.table.cols.map(c=>q2(c.label)).join(','));
+  o.table.rows.forEach(r=>lines.push((r.c||[]).map(c=>q2(cell(c))).join(',')));
+  return lines.join('\n');
+}
+async function fetchText(url){
+  const r=await fetch(url); if(!r.ok) throw new Error('HTTP '+r.status);
+  const t=await r.text(); if(/^\s*<(!doctype|html)/i.test(t)) throw new Error('Google mengirim halaman login (sheet belum publik)'); return t;
+}
+const viaCSV=(key,hdr)=>fetchText(gvizUrl(key,'out:csv',hdr));
+async function viaJSON(key,hdr){
+  const t=await fetchText(gvizUrl(key,'out:json',hdr)); const m=/setResponse\(([\s\S]*)\)\s*;?\s*$/.exec(t); if(!m) throw new Error('format respon tidak dikenali');
+  return gvizToCSV(JSON.parse(m[1]));
+}
+function viaJSONP(key,hdr){
+  return new Promise((res,rej)=>{
+    const cb='__gv'+Date.now()+Math.floor(Math.random()*1e5), sc=document.createElement('script');
+    const clean=()=>{try{delete window[cb];}catch(e){window[cb]=undefined;} sc.remove();};
+    window[cb]=o=>{clean();try{res(gvizToCSV(o));}catch(e){rej(e);}};
+    sc.onerror=()=>{clean();rej(new Error('script diblokir (adblock / jaringan) atau sheet belum publik'));};
+    sc.src=gvizUrl(key,'out:json;responseHandler:'+cb,hdr); document.head.appendChild(sc);
+  });
+}
+const withTimeout=(p,ms)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error('waktu habis (>'+Math.round(ms/1000)+' detik)')),ms))]);
+function validate(t,col='Nama Usaha/Kegiatan'){
+  const rows=parseCSV(t); const hi=rows.findIndex(r=>r.some(c=>c.trim()===col));
+  if(hi<0) throw new Error('judul kolom "'+col+'" tidak ditemukan');
+  if(rows.slice(hi+1).filter(r=>r.some(c=>c.trim())).length<1) throw new Error('tidak ada baris data');
+}
+let steps={pt:[],dash:[],denda:[],arsip:[]};
+function renderLog(){
+  const nm={pt:'Sheet "'+CFG.SHEET_PT+'"',dash:'Sheet "'+CFG.SHEET_DASH+'"',denda:'Sheet "'+CFG.SHEET_DENDA+'" (opsional)',arsip:'Sheet "'+CFG.SHEET_ARSIP+'" (opsional)'};
+  $('#loadlog').innerHTML=['pt','dash','denda','arsip'].map(k=>`<div class="sh">${nm[k]}</div>`+steps[k].map(x=>`<div class="st ${x.s}">${x.s==='ok'?'✔':x.s==='err'?'✘':'⏳'} ${esc(x.m)}${x.t?' — '+esc(x.t):''}</div>`).join('')).join('');
+}
+async function getSheet(key){
+  const att=[];
+  if(CFG.PUBLISHED[key]) att.push(['CSV publikasi web',()=>fetchText(CFG.PUBLISHED[key])]);
+  const h=CFG.HEADER_ROW[key];
+  att.push(['Google CSV',()=>viaCSV(key,h)],['Google JSON',()=>viaJSON(key,h)],['Google JSONP (tanpa CORS)',()=>viaJSONP(key,h)],
+           ['Mode cari-judul: CSV',()=>viaCSV(key,0)],['Mode cari-judul: JSONP',()=>viaJSONP(key,0)]);
+  for(const [m,fn] of att){
+    const st={m,s:'run',t:''}; steps[key].push(st); renderLog();
+    try{ const t=await withTimeout(fn(),CFG.TIMEOUT_MS); validate(t,KEYCOL[key]); st.s='ok'; renderLog(); return t; }
+    catch(e){ st.s='err'; st.t=e.message||String(e); renderLog(); }
+  }
+  throw new Error('Semua cara gagal untuk sheet "'+KEY[key]+'"');
+}
+
+/* ---------- data contoh (fiktif) ---------- */
+const PT_H=['No','Nama Usaha/Kegiatan','Kab/Kota','Asal Kasus','Posisi / Tindak Lanjut Terakhir','Status SA','Riwayat Singkat (s.d. contoh)','Pengawasan (kali)','Verif./Pengaduan (kali)','Dana APBN (kali)','Kegiatan Terakhir','Tgl Kegiatan Terakhir','Pengawas LH yang Pernah Bertugas','Temuan Terakhir (Rekap)','TL Terakhir (Rekap)','SA / Pencabutan Terakhir','Tgl SA Terakhir','Denda (Rp)','Status Bayar Denda','Lokasi Arsip Fisik','Jml Berkas Digital'];
+const DD_H=['No','Tahun','Jenis Kegiatan','Nama Usaha/Kegiatan','Kab/Kota','Uraian Aduan / Nama di Rekap','Jenis Usaha','Tanggal Pelaksanaan','Tgl Mulai','Tgl Selesai','Pengawas LH yang Bertugas','Sumber Dana','Persetujuan Lingkungan','Status Ketaatan / Temuan BA','Tindak Lanjut','Denda (Rp)','Evaluasi SA / TL Perusahaan / Monitoring','URL BA','URL SA','URL TL ND','URL Lain'];
+function sampleCSV(){
+  const G='https://drive.google.com/';
+  const S=[
+   ['PT Contoh Tirta Tekstil','Kab. Pekalongan','Pengaduan','Industri tekstil','BELUM DICABUT','SA Paksaan Pemerintah + Denda · 660.1/0452/2023','11/2/2023',185000000,'BELUM','Lemari B2 no. 5',[
+     ['6/14/2022','Pengawasan','Aris Haryadi, Eni Yulistiningsih','Tidak taat: IPAL tidak optimal, warna outlet pekat.','Teguran lisan, perbaikan IPAL 30 hari.','APBD',G,'',''],
+     ['3/9/2023','Verifikasi Pengaduan','Herlina Serny','Warga melaporkan air sungai berwarna merah; terbukti ada pembuangan limbah tanpa olah.','Rekomendasi SA Paksaan Pemerintah + Denda.','APBD',G,G,G],
+     ['5/16/2024','Pengawasan','Eni Yulistiningsih, Dida Satria','Tidak taat: COD outlet melebihi baku mutu.','Monitoring 6 bulan.','APBN',G,'',G]]],
+   ['CV Contoh Kayu Lestari','Kab. Jepara','Pengawasan','Industri kayu lapis','SUDAH DICABUT','Pencabutan SA · 660/221/2024','2/12/2024',0,'','Lemari B1 no. 13',[
+     ['8/3/2022','Pengawasan','Agus Suwarno','Tidak taat: TPS LB3 belum berizin, tanpa simbol/label.','Pembinaan.','APBD',G,'',''],
+     ['10/12/2023','Pengawasan','Agus Suwarno, Dida Satria','Logbook LB3 belum lengkap.','Teguran tertulis.','APBD',G,G,G]]],
+   ['PT Contoh Agro Pangan','Kab. Pati','Pengaduan','Industri tapioka','–','','',0,'','Lemari B1 no. 21',[
+     ['1/25/2024','Verifikasi Pengaduan','Herlina Serny, Eni Yulistiningsih','Bau menyengat dari kolam anaerob; kolam meluap saat hujan.','Teguran tertulis, wajib pengurasan.','APBD',G,'',G]]],
+   ['RS Contoh Harapan Sehat','Kota Semarang','Pengawasan','Rumah sakit','–','','',0,'','Lemari C1 no. 2',[
+     ['4/11/2023','Pengawasan','Aris Warsito','Taat. Pengelolaan limbah medis sesuai.','Tidak ada.','APBD',G,'',''],
+     ['7/8/2025','Pengawasan','Aris Warsito, Agus Suwarno','Taat. Manifest LB3 lengkap.','Tidak ada.','APBD',G,'','']]],
+   ['PT Contoh Baja Mandiri','Kab. Tegal','Pengawasan','Pengecoran logam','BELUM DICABUT','SA Paksaan Pemerintah + Denda · 600.4/311 Tahun 2023','8/10/2023',240000000,'SUDAH','Lemari B2 no. 11',[
+     ['11/17/2022','Pengawasan','Aris Haryadi','Tidak taat: emisi cerobong tidak diuji; slag ditimbun terbuka.','Teguran tertulis.','APBD',G,'',''],
+     ['6/22/2023','Pengawasan','Aris Haryadi, Dida Satria','Tidak taat: uji emisi melebihi baku mutu.','SA Paksaan Pemerintah + Denda.','APBN',G,G,G],
+     ['3/5/2026','Pengawasan','Dida Satria','Operasional baik; denda lunas.','Pemantauan.','APBD',G,'','']]],
+   ['PT Contoh Karya Plastik','Kab. Kendal','Pengaduan','Daur ulang plastik','BELUM DICABUT','Denda Administratif · 660.1/0054/2024','2/19/2024',150000000,'BELUM','Lemari B3 no. 18',[
+     ['2/15/2023','Verifikasi Pengaduan','Agus Suwarno','Pembakaran sisa plastik terbuka.','Teguran tertulis.','APBD',G,'',''],
+     ['1/29/2025','Pengawasan','Eni Yulistiningsih','Pembakaran berhenti; denda belum dibayar.','Penagihan ke-3.','APBD',G,G,'']]],
+   ['UD Contoh Batik Warna Alam','Kota Pekalongan','Pengaduan','Industri batik','–','','',0,'','Lemari C2 no. 4',[
+     ['4/23/2024','Pengaduan (tanpa verlap)','Herlina Serny','Pembuangan limbah celup ke saluran kampung.','Pembinaan IPAL komunal.','APBD','','','']]],
+   ['PT Contoh Gula Manis','Kab. Klaten','Pengawasan','Pabrik gula','–','','',0,'','Lemari A2 no. 3',[
+     ['9/7/2022','Pengawasan','Eni Yulistiningsih','Kolam stabilisasi penuh.','Teguran lisan.','APBD',G,'',''],
+     ['9/10/2025','Pengawasan','Herlina Serny','Taat; pelaporan tertib.','Tidak ada.','APBD',G,'','']]],
+   ['CV Contoh Karang Putih','Kab. Grobogan','Pengaduan','Penambangan batu gamping','BELUM DICABUT','Pembekuan Izin Lingkungan · 660.1/0377/2024','11/4/2024',75000000,'BELUM','Lemari B3 no. 16',[
+     ['7/13/2023','Verifikasi Pengaduan','Aris Warsito','Debu dan kerusakan jalan; reklamasi belum dilakukan.','Koordinasi dengan ESDM.','APBD',G,'',''],
+     ['1/21/2026','Pengawasan','Aris Haryadi, Agus Suwarno','Tidak taat: reklamasi baru 20%.','Pemantauan 3 bulan.','APBN',G,G,G]]]
+  ];
+  const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+  const pt=[PT_H.map(q).join(',')], dd=[DD_H.map(q).join(',')]; let n=0,m=0;
+  S.forEach(u=>{
+    const v=u[10], aw=v.filter(x=>x[1]==='Pengawasan').length, last=v.slice().sort((a,b)=>new Date(b[0])-new Date(a[0]))[0];
+    pt.push([++n,u[0],u[1],u[2],'Kegiatan terakhir '+last[0],u[4],'',aw,v.length-aw,v.filter(x=>x[5]==='APBN').length,last[1],last[0],[...new Set(v.flatMap(x=>x[2].split(', ')))].join(', '),last[3],last[4],u[5],u[6],u[7]||'',u[8],u[9],v.filter(x=>x[6]).length].map(q).join(','));
+    v.forEach(x=>{const y=new Date(x[0]).getFullYear();dd.push([++m,y,x[1],u[0],u[1],'',u[3],x[0],x[0],x[0],x[2],x[5],'',x[3],x[4],'','',x[6],x[7],x[8],''].map(q).join(','));});
+  });
+  // contoh sheet Sanksi & Denda dan Arsip Berkas
+  const DN_H=['No','Kab/Kota','Nama Usaha','Jenis Dokumen','Nomor SK / Surat','Tanggal','Tahun','Nominal Denda (Rp)','Status Bayar','Tgl Urut','Link Berkas Denda','URL SK','URL SK 2'];
+  const AR_H=['No','Kab/Kota','Nama Usaha','Nama Berkas','Tanggal','Jenis Berkas','Kategori','Link Digital','Lokasi Fisik (Lemari)'];
+  const dn=[DN_H.map(q).join(',')], ar=[AR_H.map(q).join(',')]; let a=0,b=0;
+  S.filter(u=>u[4]!=='–').forEach((u,i)=>{
+    dn.push([++a,u[1],u[0],u[7]?'SA Paksaan Pemerintah + Denda':'SA Teguran Tertulis',u[5].split(' · ')[1]||'660/'+i,u[6],new Date(u[6]).getFullYear(),u[7]||'',u[8]==='SUDAH'?'SUDAH':u[8]==='BELUM'?'BELUM':'',u[6],u[7]?G+'denda-folder-'+i:'',G+'sk-'+i,i%2?G+'sk2-'+i:''].map(q).join(','));
+    ar.push([++b,u[1],u[0],'SA '+u[0],u[6],'SA Paksaan Pemerintah','Pengawasan',G+'arsip-sa-'+i,u[9]].map(q).join(','));
+  });
+  S.forEach((u,i)=>{
+    ar.push([++b,u[1],u[0],'BA '+u[0]+' (arsip)','1/5/2024','Berita Acara','Pengawasan',G+'arsip-ba-'+i,u[9]].map(q).join(','));
+    ar.push([++b,u[1],u[0],'ND tindak lanjut '+u[0],'2/5/2024','Nota Dinas','Pengawasan',G+'arsip-nd-'+i,u[9]].map(q).join(','));
+    if(i%3===0) ar.push([++b,u[1],u[0],'LHP '+u[0],'3/5/2024','LHP','Pengawasan','Lihat Dokumen',u[9]].map(q).join(','));
+  });
+  return [pt.join('\n'),dd.join('\n'),dn.join('\n'),ar.join('\n')];
+}
+
+/* ---------- unggah CSV manual ---------- */
+function classify(t){ if(/Pengawasan \(kali\)/.test(t)) return 'pt'; if(/URL BA/.test(t)&&/Jenis Kegiatan/.test(t)) return 'dash'; if(/Nomor SK/.test(t)&&/URL SK/.test(t)) return 'denda'; if(/Nama Berkas/.test(t)&&/Link Digital/.test(t)) return 'arsip'; return ''; }
+$('#upl').addEventListener('click',()=>$('#fileup').click());
+$('#fileup').addEventListener('change',async e=>{
+  const files=[...e.target.files]; e.target.value=''; if(!files.length)return;
+  const got={};
+  for(const f of files){
+    const t=await f.text();
+    if(/## Sheet name:/.test(t)){ t.split('## Sheet name: ').slice(1).forEach(p=>{const i=p.indexOf('\n'),n=p.slice(0,i).trim(),b=p.slice(i+1); if(n===CFG.SHEET_PT)got.pt=b; if(n===CFG.SHEET_DASH)got.dash=b; if(n===CFG.SHEET_DENDA)got.denda=b; if(n===CFG.SHEET_ARSIP)got.arsip=b;}); }
+    else { const k=classify(t); if(k)got[k]=t; }
+  }
+  if(!got.pt||!got.dash){ $('#msg').innerHTML='<div class="banner err">Butuh minimal 2 file CSV sekaligus: sheet <b>Per PT</b> dan <b>Data Dashboard (otomatis)</b>. Tambahkan juga <b>Data Denda Dashboard (otomatis)</b> dan <b>Arsip Berkas</b> supaya tautan dokumen lengkap (File → Download → CSV, per sheet).</div>'; return; }
+  try{ validate(got.pt); validate(got.dash); if(got.denda)validate(got.denda,'Nama Usaha'); if(got.arsip)validate(got.arsip,'Nama Usaha'); }catch(err){ $('#msg').innerHTML='<div class="banner err">File tidak dikenali: '+esc(err.message)+'</div>'; return; }
+  finish(got.pt,got.dash,'unggah',new Date(),got.denda,got.arsip);
+});
+$('#demo').addEventListener('click',()=>{const [a,b,c,d]=sampleCSV();finish(a,b,'contoh',new Date(),c,d);});
+
+/* ---------- muat ---------- */
+const CK='pplh_cache_v1';
+function showLoading(){
+  $('#loader').style.display='block'; $('#msg').innerHTML=''; $('#loadtitle').innerHTML='<b>Mengambil data dari Google Sheets…</b>';
+  document.querySelectorAll('.view').forEach(v=>v.style.visibility='hidden'); steps={pt:[],dash:[],denda:[],arsip:[]}; renderLog();
+}
+function showError(err){
+  $('#loadtitle').innerHTML='';
+  $('.spin').style.display='none';
+  $('#msg').innerHTML=`<div class="banner err"><b>⚠ Data dari Google Sheets belum bisa dimuat.</b><br>${esc(err.message)}. Rincian percobaan ada di bawah.
+    <ul style="margin:8px 0 0 18px;padding:0">
+     <li>Pastikan sheet dibagikan: <b>Bagikan → Siapa saja yang memiliki link → Viewer</b>.</li>
+     <li>Nama sheet harus tetap <code>Per PT</code> dan <code>Data Dashboard (otomatis)</code>.</li>
+     <li>Matikan adblock/VPN untuk halaman ini, lalu coba lagi. Kalau jaringan kantor memblokir Google, pakai data contoh atau unggah CSV.</li>
+     <li>Opsi paling kuat: <b>File → Bagikan → Publikasikan ke web</b> (format CSV, per sheet), lalu tempel link-nya ke <code>CFG.PUBLISHED</code> di bagian atas script.</li></ul>
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="retry">⟳ Coba lagi</button><button class="btn ghost" id="demo2">🧪 Tampilkan data contoh</button><button class="btn ghost" id="upl2">📂 Unggah file CSV</button></div></div>`;
+  $('#retry').addEventListener('click',load); $('#demo2').addEventListener('click',()=>$('#demo').click()); $('#upl2').addEventListener('click',()=>$('#fileup').click());
+  document.querySelectorAll('.view').forEach(v=>v.style.visibility='hidden');
+}
+async function load(){
+  $('.spin').style.display=''; showLoading();
+  let csvPT,csvD,csvDn=null,csvAr=null,src='live',when=new Date();
+  try{
+    [csvPT,csvD,csvDn,csvAr]=await Promise.all([getSheet('pt'),getSheet('dash'),getSheet('denda').catch(()=>null),getSheet('arsip').catch(()=>null)]);
+    try{localStorage.setItem(CK,JSON.stringify({csvPT,csvD,csvDn,csvAr,t:when.toISOString()}));}catch(e){}
+  }catch(err){
+    let c=null; try{c=JSON.parse(localStorage.getItem(CK)||'null');}catch(e){}
+    if(c){csvPT=c.csvPT;csvD=c.csvD;csvDn=c.csvDn||null;csvAr=c.csvAr||null;when=new Date(c.t);src='cache';} else { showError(err); return; }
+  }
+  finish(csvPT,csvD,src,when,csvDn,csvAr);
+}
+function finish(csvPT,csvD,src,when,csvDn,csvAr){
+  try{ build(csvPT,csvD,csvDn,csvAr); }
+  catch(e){ showError(new Error('Format sheet tidak dikenali: '+e.message)); return; }
+  const N={live:'',cache:'<div class="banner warn">⚠ Tidak bisa mengambil data terbaru dari Google Sheets. Menampilkan <b>salinan terakhir</b> yang tersimpan di perangkat ini ('+esc(when.toLocaleString('id-ID'))+'). <button class="btn sm" id="retry2">Coba ambil lagi</button></div>',
+    contoh:'<div class="banner warn">🧪 <b>MODE DATA CONTOH</b> — data di bawah ini fiktif, hanya untuk uji tampilan. <button class="btn sm" id="retry2">Muat data asli</button></div>',
+    unggah:'<div class="banner warn">📂 Menampilkan data dari <b>file CSV yang kamu unggah</b> (bukan langsung dari Google Sheets). <button class="btn sm" id="retry2">Muat dari Google Sheets</button></div>'};
+  const miss=[!csvDn&&'"'+CFG.SHEET_DENDA+'"',!csvAr&&'"'+CFG.SHEET_ARSIP+'"'].filter(Boolean);
+  const warnDoc=miss.length&&src!=='contoh'?'<div class="banner warn">ℹ️ Sheet '+esc(miss.join(' dan '))+' tidak ikut termuat, jadi tautan dokumen di Profil Usaha mungkin belum lengkap.</div>':'';
+  $('#msg').innerHTML=N[src]+warnDoc; $('#retry2')?.addEventListener('click',load);
+  $('#loader').style.display='none';
+  document.querySelectorAll('.view').forEach(v=>v.style.visibility='');
+  const lbl={live:'Sumber: Google Sheets (langsung)',cache:'Sumber: salinan tersimpan',contoh:'Sumber: DATA CONTOH',unggah:'Sumber: file unggahan'}[src];
+  $('#updated').textContent=lbl+' · '+when.toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'})+' · '+U.length+' usaha · '+V.length+' catatan kegiatan';
+  $('#s-kab').innerHTML='<option value="">Semua Kab/Kota</option>'+KAB.map(k=>`<option>${esc(k)}</option>`).join('');
+  sel=null; $('#layout').classList.remove('detail-open'); st=emptyState();
+  renderDash(); doSearch(); runAsk();
+}
+$('#reload').addEventListener('click',load);
+load();
+</script>
+</body>
+</html>
